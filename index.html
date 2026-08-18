@@ -156,9 +156,10 @@
   .amb-sep{color:var(--line);}
   .amb-label{color:var(--muted);}
 
+  .header-right{display:flex;align-items:center;gap:12px}.live-clock{font-size:10px;color:var(--cyan);letter-spacing:.05em;text-align:right;white-space:nowrap}.next-event{max-width:760px;margin:8px auto 0;border:1px solid rgba(124,92,255,.35);border-radius:20px;overflow:hidden;background:linear-gradient(135deg,rgba(124,92,255,.12),rgba(255,47,146,.06) 55%,rgba(8,6,13,.9));box-shadow:0 20px 60px rgba(0,0,0,.35),0 0 45px rgba(124,92,255,.12);display:grid;grid-template-columns:180px 1fr;text-align:left}.next-event img{width:100%;height:100%;min-height:175px;object-fit:cover;display:block}.next-copy{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px}.next-label{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--magenta);font-weight:700}.next-copy h3{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;letter-spacing:.02em}.next-meta{font-size:10.5px;color:var(--muted)}.countdown{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}.countdown-unit{min-width:52px;padding:7px 8px;border:1px solid rgba(63,224,208,.18);border-radius:9px;background:rgba(8,6,13,.45);text-align:center}.countdown-unit b{display:block;font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1;color:var(--cyan)}.countdown-unit span{display:block;margin-top:2px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.search-wrap{max-width:760px;margin:0 auto 24px}.event-search{width:100%;padding:14px 17px 14px 44px;border:1px solid rgba(124,92,255,.28);border-radius:14px;background:rgba(8,6,13,.68);color:var(--ink);font:500 12px 'Space Grotesk',sans-serif;outline:none;backdrop-filter:blur(8px)}.event-search:focus{border-color:rgba(63,224,208,.55);box-shadow:0 0 22px rgba(63,224,208,.08)}.event-search::placeholder{color:var(--muted)}.search-icon{position:relative}.search-icon::before{content:'⌕';position:absolute;left:16px;top:10px;color:var(--cyan);font-size:20px;z-index:2}.no-results{display:none;text-align:center;color:var(--muted);font-size:12px;padding:20px}.contact-btn{display:inline-flex;padding:9px 14px;border:1px solid rgba(63,224,208,.28);border-radius:9px;background:linear-gradient(90deg,rgba(63,224,208,.08),rgba(124,92,255,.10));font-size:10.5px;font-weight:700;color:var(--cyan);transition:.15s}.contact-btn:hover{border-color:var(--cyan);color:var(--ink);box-shadow:0 0 18px rgba(63,224,208,.16);transform:translateY(-1px)}
   @media (max-width: 860px){.steps, .events-grid, .why-grid{grid-template-columns:1fr 1fr;}}
   @media (max-width: 560px){
-    .steps, .events-grid, .why-grid{grid-template-columns:1fr;}
+    .header-right{width:100%;justify-content:space-between}.live-clock{font-size:8.5px}.next-event{grid-template-columns:1fr;margin-left:0;margin-right:0}.next-event img{height:190px;min-height:0}.next-copy h3{font-size:27px}.countdown-unit{min-width:48px}.steps, .events-grid, .why-grid{grid-template-columns:1fr;}
     .nav{flex-direction:column; gap:10px; align-items:flex-start;}
   }
 
@@ -215,7 +216,7 @@
 <header>
   <div class="nav wrap">
     <a class="logo" href="https://beon.komi.io/?utm_source=ig&amp;utm_medium=social&amp;utm_content=link_in_bio&amp;fbclid=PAcGRvZgJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA85MzY2MTk3NDMzOTI0NTkAAafJfEMlAtSkY1wL5ILx9ftb7246r0KE3V0hZrlGgFi2DrCQNI5GAx8MsqWE_Q_aem_qhE9z3Mx0pBNToAsPkv6vQ" target="_blank" rel="noopener"><span class="dot"></span> BE·ON</a>
-    <div class="coupon-pill">5% OFF · <b>MATHEUSMASCENA</b></div>
+    <div class="header-right"><div class="live-clock" id="liveClock" aria-live="polite"></div><div class="coupon-pill">5% OFF · <b>MATHEUSMASCENA</b></div></div>
   </div>
 </header>
 
@@ -227,7 +228,7 @@
   </div>
   <span class="eyebrow">Line-ups selecionados · Ingressos oficiais Ingresse</span>
   <h1 class="display">SEU PRÓXIMO<br>EVENTO ESTÁ AQUI</h1>
-  <p>Os melhores eventos de música eletrônica de São Paulo em um só lugar, com 5% de desconto automático no ingresso.</p>
+  <p>Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <strong>5% OFF</strong> usando o código: MATHEUSMASCENA.</p>
   <div class="code-box">
     <div class="label">Seu cupom exclusivo</div>
     <div class="code">
@@ -236,6 +237,19 @@
     </div>
   </div>
   <div class="cta-row"><a href="#eventos" class="btn-main">Ver eventos ↓</a></div>
+</section>
+
+<section class="wrap" aria-label="Próximo evento em destaque">
+  <div class="next-event">
+    <img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang">
+    <div class="next-copy">
+      <div class="next-label">🔥 Próximo evento</div>
+      <h3>The Grid: Outworld by Klang</h3>
+      <div class="next-meta">19 de setembro de 2026 · Arca, São Paulo · Klangkuenstler</div>
+      <div class="countdown" id="countdown" aria-live="polite"><div class="countdown-unit"><b id="cdDays">--</b><span>dias</span></div><div class="countdown-unit"><b id="cdHours">--</b><span>horas</span></div><div class="countdown-unit"><b id="cdMinutes">--</b><span>min</span></div><div class="countdown-unit"><b id="cdSeconds">--</b><span>seg</span></div></div>
+      <a class="next-cta buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a>
+    </div>
+  </div>
 </section>
 
 <section class="section wrap">
@@ -256,14 +270,16 @@
     <h2 class="display">Selecione seu evento</h2>
     <p>Todos os ingressos com desconto garantido e compra 100% oficial.</p>
   </div>
-  <div class="events-grid">
-<div class="card"><div class="card-img"><span class="tag">19 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang"></div><div class="card-body"><h3>The Grid: Outworld by Klang</h3><div class="meta"><span><b>Local:</b> Arca, SP</span><span><b>Line-up:</b> Klangkuenstler</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-<div class="card"><div class="card-img"><span class="tag">26 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg" alt="Adriatique - X São Paulo"></div><div class="card-body"><h3>Adriatique — X São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Adriatique</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/91444?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-<div class="card"><div class="card-img"><span class="tag">17 out 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10" alt="Crochestra Brasil"></div><div class="card-body"><h3>Crochestra Brasil</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Freedom Fighters X Meir Briskman</span></div><a class="buy-btn" href="https://cart.ingresse.com/7bc10b1b-bef9-45cf-a45b-135651fd921a/tickets?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-<div class="card"><div class="card-img"><span class="tag">7 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp" alt="Music On São Paulo"></div><div class="card-body"><h3>Music On — São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Marco Carola e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-<div class="card"><div class="card-img"><span class="tag">21 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG-KJTFGlUei_pam-GZK5zQY6b3nESvqBc0yO_RWEGQ7fZ_T5ciWCouW6B&s=10" alt="UNREAL x The Grid"></div><div class="card-body"><h3>UNREAL x The Grid</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Kuko, Cloudy, Serafina e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-<div class="card"><div class="card-img"><span class="tag">28 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg" alt="One Life São Paulo - Michael Bibi"></div><div class="card-body"><h3>One Life SP — Michael Bibi</h3><div class="meta"><span><b>Local:</b> Arena Pinheiros, SP</span><span><b>Line-up:</b> Michael Bibi e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+  <div class="search-wrap search-icon"><input id="eventSearch" class="event-search" type="search" placeholder="Pesquisar por nome ou data (ex.: Grid, 19 set, 2026)" aria-label="Pesquisar eventos por nome ou data"></div>
+  <div class="events-grid" id="eventsGrid">
+<div class="card" data-search="The Grid Outworld by Klang 19 set 2026 19/09/2026 2026"><div class="card-img"><span class="tag">19 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang"></div><div class="card-body"><h3>The Grid: Outworld by Klang</h3><div class="meta"><span><b>Local:</b> Arca, SP</span><span><b>Line-up:</b> Klangkuenstler</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card" data-search="Adriatique X São Paulo 26 set 2026 26/09/2026 2026"><div class="card-img"><span class="tag">26 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg" alt="Adriatique - X São Paulo"></div><div class="card-body"><h3>Adriatique — X São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Adriatique</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/91444?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card" data-search="Crochestra Brasil 17 out 2026 17/10/2026 2026"><div class="card-img"><span class="tag">17 out 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10" alt="Crochestra Brasil"></div><div class="card-body"><h3>Crochestra Brasil</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Freedom Fighters X Meir Briskman</span></div><a class="buy-btn" href="https://cart.ingresse.com/7bc10b1b-bef9-45cf-a45b-135651fd921a/tickets?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card" data-search="Music On São Paulo 7 nov 2026 07/11/2026 2026"><div class="card-img"><span class="tag">7 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp" alt="Music On São Paulo"></div><div class="card-body"><h3>Music On — São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Marco Carola e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card" data-search="UNREAL The Grid 21 nov 2026 21/11/2026 2026"><div class="card-img"><span class="tag">21 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG-KJTFGlUei_pam-GZK5zQY6b3nESvqBc0yO_RWEGQ7fZ_T5ciWCouW6B&s=10" alt="UNREAL x The Grid"></div><div class="card-body"><h3>UNREAL x The Grid</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Kuko, Cloudy, Serafina e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card" data-search="One Life SP Michael Bibi 28 nov 2026 28/11/2026 2026"><div class="card-img"><span class="tag">28 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg" alt="One Life São Paulo - Michael Bibi"></div><div class="card-body"><h3>One Life SP — Michael Bibi</h3><div class="meta"><span><b>Local:</b> Arena Pinheiros, SP</span><span><b>Line-up:</b> Michael Bibi e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
   </div>
+  <div class="no-results" id="noResults">Nenhum evento encontrado. Tente buscar pelo nome ou pela data.</div>
 </section>
 
 <section class="section wrap">
@@ -287,16 +303,21 @@
 
 <footer class="wrap">
   <a class="logo" href="https://beon.komi.io/?utm_source=ig&amp;utm_medium=social&amp;utm_content=link_in_bio&amp;fbclid=PAcGRvZgJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA85MzY2MTk3NDMzOTI0NTkAAafJfEMlAtSkY1wL5ILx9ftb7246r0KE3V0hZrlGgFi2DrCQNI5GAx8MsqWE_Q_aem_qhE9z3Mx0pBNToAsPkv6vQ" target="_blank" rel="noopener"><span class="dot"></span> BE·ON</a>
-  <p>Curadoria de eventos de música eletrônica · Use sempre o código <span class="code-inline">MATHEUSMASCENA</span> para garantir seu desconto.</p>
+  <p>Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <strong>5% OFF</strong> usando o código: <span class="code-inline">MATHEUSMASCENA</span>.</p>
   <div class="ambassador">
     <p class="amb-name">Matheus Alves Mascena — Embaixador BeOn</p>
     <div class="amb-links">
       <span class="amb-label">Instagram:</span><a href="https://www.instagram.com/mat_mascena97?igsh=ZzFuYWduZGw5ZG43&amp;igsi=ZzFuYWduZGw5ZG43&amp;utm_source=qr" target="_blank" rel="noopener">Matheus Alves</a>
       <span class="amb-sep">·</span>
       <span class="amb-label">Instagram BeOn:</span><a href="https://www.instagram.com/beonentertainment/" target="_blank" rel="noopener">BeOn Entertainment</a>
+      <span class="amb-sep">·</span>
+      <a class="contact-btn" href="https://w.app/matheusalves-fale-comigo" target="_blank" rel="noopener">Fale comigo</a>
     </div>
   </div>
 </footer>
 
+<script>
+(function(){const clock=document.getElementById('liveClock');function updateClock(){const now=new Date();const date=now.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});const time=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});clock.textContent=date+' · '+time;}updateClock();setInterval(updateClock,1000);const target=new Date('2026-09-19T00:00:00-03:00').getTime();function updateCountdown(){let diff=Math.max(0,target-Date.now());const days=Math.floor(diff/86400000);diff%=86400000;const hours=Math.floor(diff/3600000);diff%=3600000;const mins=Math.floor(diff/60000);const secs=Math.floor(diff/1000)%60;document.getElementById('cdDays').textContent=String(days).padStart(2,'0');document.getElementById('cdHours').textContent=String(hours).padStart(2,'0');document.getElementById('cdMinutes').textContent=String(mins).padStart(2,'0');document.getElementById('cdSeconds').textContent=String(secs).padStart(2,'0');}updateCountdown();setInterval(updateCountdown,1000);const input=document.getElementById('eventSearch'),grid=document.getElementById('eventsGrid'),no=document.getElementById('noResults');input.addEventListener('input',function(){const q=this.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');let visible=0;grid.querySelectorAll('.card').forEach(card=>{const text=(card.dataset.search+' '+card.textContent).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const ok=!q||text.includes(q);card.style.display=ok?'flex':'none';if(ok)visible++;});no.style.display=visible?'none':'block';});})();
+</script>
 </body>
 </html>
