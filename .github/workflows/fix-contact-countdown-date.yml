@@ -1,0 +1,44 @@
+name: Fix contact countdown date
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply site fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* Final contact countdown and live date fix */'
+          if marker not in s:
+            css='''\n/* Final contact countdown and live date fix */\n.live-date{font-size:10px;color:var(--muted);letter-spacing:.04em;text-align:center;white-space:nowrap}\n.countdown{display:grid;grid-template-columns:repeat(4,minmax(54px,1fr));gap:7px;margin-top:8px;max-width:330px}\n.countdown-box{border:1px solid rgba(63,224,208,.22);background:rgba(8,6,13,.58);border-radius:9px;padding:7px 5px;text-align:center}\n.countdown-num{display:block;font-family:'Bebas Neue',sans-serif;font-size:23px;line-height:1;color:var(--cyan)}\n.countdown-label{display:block;font-size:7px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:2px}\n@media(max-width:560px){.live-date{font-size:9px;white-space:normal}.countdown{max-width:none}}\n'''
+            s=s.replace('</style>',css+'</style>',1)
+            # Exact requested copy.
+            old='Uma curadoria dos melhores eventos de música eletrônica, com compra oficial e <strong>5% OFF</strong> usando MATHEUSMASCENA'
+            new='Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <strong>5% OFF</strong> usando o código: MATHEUSMASCENA.'
+            s=s.replace(old,new)
+            # Add final behavior layer. It cleans any misplaced WhatsApp link, then adds it only to the ambassador area.
+            js='''\n<script>\ndocument.addEventListener('DOMContentLoaded', function(){\n  // Keep WhatsApp contact only in the professional/ambassador section.\n  document.querySelectorAll('a[href="https://w.app/matheusalves-fale-comigo"]').forEach(function(a){ a.remove(); });\n  const social=document.querySelector('.ambassador-section .social-row');\n  if(social){\n    const a=document.createElement('a');\n    a.className='social-btn contact-btn';\n    a.href='https://w.app/matheusalves-fale-comigo';\n    a.target='_blank'; a.rel='noopener'; a.textContent='💬 Fale comigo';\n    social.appendChild(a);\n  }\n  // Live full date/time in the top navigation, localized to the visitor's device.\n  const nav=document.querySelector('header .nav');\n  if(nav){\n    let dateBox=document.getElementById('liveDate');\n    if(!dateBox){ dateBox=document.createElement('div'); dateBox.id='liveDate'; dateBox.className='live-date'; nav.insertBefore(dateBox, nav.lastElementChild); }\n    const updateDate=function(){\n      const now=new Date();\n      dateBox.textContent=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(now);\n    }; updateDate(); setInterval(updateDate,1000);\n  }\n  // Countdown for the highlighted nearest event: The Grid: Outworld, 19/09/2026.\n  const next=document.querySelector('.next-event .next-copy');\n  if(next){\n    const existing=next.querySelector('.countdown'); if(existing) existing.remove();\n    const wrap=document.createElement('div'); wrap.className='countdown'; wrap.setAttribute('aria-label','Contagem regressiva para o próximo evento');\n    wrap.innerHTML='<div class="countdown-box"><span id="cdDays" class="countdown-num">00</span><span class="countdown-label">Dias</span></div><div class="countdown-box"><span id="cdHours" class="countdown-num">00</span><span class="countdown-label">Horas</span></div><div class="countdown-box"><span id="cdMinutes" class="countdown-num">00</span><span class="countdown-label">Min</span></div><div class="countdown-box"><span id="cdSeconds" class="countdown-num">00</span><span class="countdown-label">Seg</span></div>';
+    const cta=next.querySelector('.next-cta'); cta ? next.insertBefore(wrap,cta) : next.appendChild(wrap);\n    const target=new Date('2026-09-19T00:00:00-03:00');\n    const tick=function(){\n      let diff=Math.max(0,target.getTime()-Date.now());\n      const d=Math.floor(diff/86400000); diff%=86400000; const h=Math.floor(diff/3600000); diff%=3600000; const m=Math.floor(diff/60000); const sec=Math.floor(diff/1000)%60;\n      document.getElementById('cdDays').textContent=String(d).padStart(2,'0'); document.getElementById('cdHours').textContent=String(h).padStart(2,'0'); document.getElementById('cdMinutes').textContent=String(m).padStart(2,'0'); document.getElementById('cdSeconds').textContent=String(sec).padStart(2,'0');\n    }; tick(); setInterval(tick,1000);\n  }\n});\n</script>\n'''
+            s=s.replace('</body>',js+'</body>',1)
+            p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fixes
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'fix: contact placement countdown live date and copy'
+          git push
+          git rm .github/workflows/fix-contact-countdown-date.yml || true
+          git commit -m 'chore: remove one-time fix workflow' || true
+          git push || true
