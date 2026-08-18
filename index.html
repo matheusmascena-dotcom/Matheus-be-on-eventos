@@ -60,6 +60,12 @@
     color:var(--muted); border:1px solid var(--line); padding:5px 12px; border-radius:99px;
     margin-bottom:22px;
   }
+  .eyebrow-accent{
+    color:var(--ink);
+    border-color:rgba(255,47,146,0.5);
+    background:linear-gradient(90deg, rgba(255,47,146,0.18), rgba(124,92,255,0.18));
+    font-weight:600;
+  }
   h1.display{
     font-size:clamp(44px, 8vw, 84px);
     line-height:0.92;
@@ -191,6 +197,20 @@
   footer .logo{justify-content:center; margin-bottom:8px;}
   footer p{font-size:11px; color:var(--muted);}
   footer .code-inline{color:var(--cyan); font-weight:600;}
+  .ambassador{
+    margin-top:26px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .amb-name{font-size:11.5px; font-weight:600; color:var(--ink); letter-spacing:0.01em;}
+  .amb-links{
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px;
+    font-size:11px; color:var(--muted);
+  }
+  .amb-links a{
+    color:var(--cyan); transition:color .15s ease;
+  }
+  .amb-links a:hover{ color:var(--magenta); }
+  .amb-sep{color:var(--line);}
 
   @media (max-width: 860px){
     .steps, .events-grid, .why-grid{grid-template-columns:1fr 1fr;}
@@ -205,14 +225,14 @@
 
 <header>
   <div class="nav wrap">
-    <div class="logo"><span class="dot"></span> BE·ON</div>
+    <a class="logo" href="https://beon.komi.io/?utm_source=ig&amp;utm_medium=social&amp;utm_content=link_in_bio&amp;fbclid=PAcGRvZgJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA85MzY2MTk3NDMzOTI0NTkAAafJfEMlAtSkY1wL5ILx9ftb7246r0KE3V0hZrlGgFi2DrCQNI5GAx8MsqWE_Q_aem_qhE9z3Mx0pBNToAsPkv6vQ" target="_blank" rel="noopener"><span class="dot"></span> BE·ON</a>
     <div class="coupon-pill">5% OFF · <b>MATHEUSMASCENA</b></div>
   </div>
 </header>
 
 <section class="hero wrap">
   <span class="eyebrow">Line-ups selecionados · Ingressos oficiais Ingresse</span>
-  <h1 class="display">A NOITE<br>COMEÇA AQUI</h1>
+  <h1 class="display">SEU PRÓXIMO<br>EVENTO ESTÁ AQUI</h1>
   <p>Os melhores eventos de música eletrônica de São Paulo em um só lugar, com 5% de desconto automático no ingresso.</p>
 
   <div class="code-box">
@@ -254,8 +274,8 @@
 
 <section class="section wrap" id="eventos">
   <div class="section-head">
-    <span class="eyebrow">Os eventos</span>
-    <h2 class="display">Seis pistas, seis noites</h2>
+    <span class="eyebrow eyebrow-accent">🔥 Os eventos</span>
+    <h2 class="display">Selecione seu evento</h2>
     <p>Todos os ingressos com desconto garantido e compra 100% oficial.</p>
   </div>
 
@@ -408,8 +428,19 @@
 </section>
 
 <footer class="wrap">
-  <div class="logo"><span class="dot"></span> BE·ON</div>
+  <a class="logo" href="https://beon.komi.io/?utm_source=ig&amp;utm_medium=social&amp;utm_content=link_in_bio&amp;fbclid=PAcGRvZgJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA85MzY2MTk3NDMzOTI0NTkAAafJfEMlAtSkY1wL5ILx9ftb7246r0KE3V0hZrlGgFi2DrCQNI5GAx8MsqWE_Q_aem_qhE9z3Mx0pBNToAsPkv6vQ" target="_blank" rel="noopener"><span class="dot"></span> BE·ON</a>
   <p>Curadoria de eventos de música eletrônica · Use sempre o código <span class="code-inline">MATHEUSMASCENA</span> para garantir seu desconto.</p>
+
+  <div class="ambassador">
+    <p class="amb-name">Matheus Alves Mascena — Embaixador BeOn</p>
+    <div class="amb-links">
+      <a href="https://www.instagram.com/mat_mascena97?igsh=ZzFuYWduZGw5ZG43&amp;igsi=ZzFuYWduZGw5ZG43&amp;utm_source=qr" target="_blank" rel="noopener">@mat_mascena97</a>
+      <span class="amb-sep">·</span>
+      <a href="https://www.instagram.com/beonentertainment/" target="_blank" rel="noopener">@beonentertainment</a>
+      <span class="amb-sep">·</span>
+      <a href="mailto:matheus.mascena@outlook.com">matheus.mascena@outlook.com</a>
+    </div>
+  </div>
 </footer>
 
 </body>
