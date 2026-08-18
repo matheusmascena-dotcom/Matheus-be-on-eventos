@@ -1,0 +1,71 @@
+name: Apply site updates
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update index.html
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          # 1) Sort event cards chronologically by the date shown in .tag.
+          section_start = html.find('<section class="section wrap" id="eventos">')
+          if section_start != -1:
+              grid_start = html.find('<div class="events-grid">', section_start)
+              grid_end = html.find('</div>\n</section>', grid_start)
+              if grid_start != -1 and grid_end != -1:
+                  grid_end += len('</div>')
+                  grid = html[grid_start:grid_end]
+                  cards = re.findall(r'<div class="card">.*?</div></div>', grid, flags=re.S)
+
+                  def event_key(card):
+                      m = re.search(r'<span class="tag">(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\s+(\d{4})</span>', card, re.I)
+                      if not m:
+                          return (9999, 99, 99)
+                      months = {'jan':1,'fev':2,'mar':3,'abr':4,'mai':5,'jun':6,'jul':7,'ago':8,'set':9,'out':10,'nov':11,'dez':12}
+                      return (int(m.group(3)), months[m.group(2).lower()], int(m.group(1)))
+
+                  if len(cards) >= 2:
+                      sorted_cards = sorted(cards, key=event_key)
+                      new_grid = '<div class="events-grid">\n' + '\n'.join(sorted_cards) + '\n  </div>'
+                      html = html[:grid_start] + new_grid + html[grid_end:]
+
+          # 2) Remove the e-mail from the ambassador footer while preserving Instagram links.
+          html = re.sub(r'<span class="amb-sep">\|</span>\s*<span class="amb-label">E-mail:</span>\s*<a[^>]*>[^<]*</a>', '', html, flags=re.I)
+          html = re.sub(r'<span class="amb-sep">\|</span>\s*<span class="amb-label">E-mail de contato:</span>\s*<a[^>]*>[^<]*</a>', '', html, flags=re.I)
+
+          # 3) Add the ambassador badge near the top of the hero.
+          badge = '''\n  <div class="ambassador-hero" aria-label="Embaixador BeOn">\n    <span class="ambassador-kicker">BE·ON AMBASSADOR</span>\n    <span class="ambassador-name">Matheus Alves Mascena</span>\n  </div>\n'''
+          if 'class="ambassador-hero"' not in html:
+              marker = '  <span class="eyebrow">Line-ups selecionados · Ingressos oficiais Ingresse</span>'
+              html = html.replace(marker, badge + marker, 1)
+
+          # 4) Festival/electronic-music visual treatment, using gradients and subtle remote artwork.
+          festival_css = '''\n  /* Festival / electronic music atmosphere */\n  body::before{\n    content:''; position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.28;\n    background:\n      linear-gradient(135deg, rgba(255,47,146,.10), transparent 30%, rgba(63,224,208,.08) 62%, transparent 80%),\n      radial-gradient(circle at 20% 35%, rgba(124,92,255,.20), transparent 22%),\n      radial-gradient(circle at 80% 62%, rgba(255,47,146,.16), transparent 24%);\n    mix-blend-mode:screen;\n  }\n  body::after{\n    content:''; position:fixed; inset:0; z-index:-3; pointer-events:none; opacity:.12;\n    background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);\n    background-size:44px 44px; mask-image:linear-gradient(to bottom, black, transparent 85%);\n  }\n  .hero::before{\n    content:''; position:absolute; width:460px; height:460px; left:50%; top:0; transform:translateX(-50%);\n    background:radial-gradient(circle, rgba(124,92,255,.18), rgba(255,47,146,.07) 38%, transparent 70%);\n    filter:blur(10px); pointer-events:none; z-index:-1;\n  }\n  .ambassador-hero{\n    display:inline-flex; flex-direction:column; align-items:center; gap:2px; margin:0 auto 18px;\n    padding:8px 18px 9px; border:1px solid rgba(63,224,208,.32); border-radius:999px;\n    background:linear-gradient(90deg, rgba(63,224,208,.07), rgba(124,92,255,.12), rgba(255,47,146,.07));\n    box-shadow:0 0 28px rgba(124,92,255,.16), inset 0 0 18px rgba(255,255,255,.025);\n    text-transform:uppercase;\n  }\n  .ambassador-kicker{font-size:8px; letter-spacing:.24em; color:var(--cyan); font-weight:700;}\n  .ambassador-name{font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:.08em; color:var(--ink); line-height:1;}\n  .events-grid{position:relative;}\n  .events-grid::before{content:'LIVE • ELECTRONIC • FESTIVAL'; position:absolute; left:50%; transform:translateX(-50%); top:-18px; font-size:8px; letter-spacing:.3em; color:rgba(255,255,255,.22); white-space:nowrap; pointer-events:none;}\n  .card{background:linear-gradient(155deg, rgba(25,17,40,.96), rgba(11,8,19,.98));}\n  .card-img img{transition:transform .5s ease, filter .5s ease;}\n  .card:hover .card-img img{transform:scale(1.045); filter:saturate(1.2) contrast(1.06);}\n  .tag{box-shadow:0 0 14px rgba(63,224,208,.12);}\n  .discount-tag{box-shadow:0 0 16px rgba(255,47,146,.28);}\n  .section-head .eyebrow-accent{box-shadow:0 0 30px rgba(255,47,146,.18), inset 0 0 20px rgba(124,92,255,.08);}\n'''
+          if '/* Festival / electronic music atmosphere */' not in html:
+              html = html.replace('</style>', festival_css + '\n</style>', 1)
+
+          path.write_text(html, encoding='utf-8')
+
+      - name: Commit and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/apply-site-updates.yml
+          git commit -m "feat: sort events and refresh festival visual identity"
+          git push
