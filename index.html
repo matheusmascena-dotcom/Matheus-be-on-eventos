@@ -161,6 +161,44 @@
     .steps, .events-grid, .why-grid{grid-template-columns:1fr;}
     .nav{flex-direction:column; gap:10px; align-items:flex-start;}
   }
+
+  /* Festival / electronic music atmosphere */
+  body::before{
+    content:''; position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.28;
+    background:
+      linear-gradient(135deg, rgba(255,47,146,.10), transparent 30%, rgba(63,224,208,.08) 62%, transparent 80%),
+      radial-gradient(circle at 20% 35%, rgba(124,92,255,.20), transparent 22%),
+      radial-gradient(circle at 80% 62%, rgba(255,47,146,.16), transparent 24%);
+    mix-blend-mode:screen;
+  }
+  body::after{
+    content:''; position:fixed; inset:0; z-index:-3; pointer-events:none; opacity:.12;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:44px 44px; mask-image:linear-gradient(to bottom, black, transparent 85%);
+  }
+  .hero::before{
+    content:''; position:absolute; width:460px; height:460px; left:50%; top:0; transform:translateX(-50%);
+    background:radial-gradient(circle, rgba(124,92,255,.18), rgba(255,47,146,.07) 38%, transparent 70%);
+    filter:blur(10px); pointer-events:none; z-index:-1;
+  }
+  .ambassador-hero{
+    display:inline-flex; flex-direction:column; align-items:center; gap:2px; margin:0 auto 18px;
+    padding:8px 18px 9px; border:1px solid rgba(63,224,208,.32); border-radius:999px;
+    background:linear-gradient(90deg, rgba(63,224,208,.07), rgba(124,92,255,.12), rgba(255,47,146,.07));
+    box-shadow:0 0 28px rgba(124,92,255,.16), inset 0 0 18px rgba(255,255,255,.025);
+    text-transform:uppercase;
+  }
+  .ambassador-kicker{font-size:8px; letter-spacing:.24em; color:var(--cyan); font-weight:700;}
+  .ambassador-name{font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:.08em; color:var(--ink); line-height:1;}
+  .events-grid{position:relative;}
+  .events-grid::before{content:'LIVE • ELECTRONIC • FESTIVAL'; position:absolute; left:50%; transform:translateX(-50%); top:-18px; font-size:8px; letter-spacing:.3em; color:rgba(255,255,255,.22); white-space:nowrap; pointer-events:none;}
+  .card{background:linear-gradient(155deg, rgba(25,17,40,.96), rgba(11,8,19,.98));}
+  .card-img img{transition:transform .5s ease, filter .5s ease;}
+  .card:hover .card-img img{transform:scale(1.045); filter:saturate(1.2) contrast(1.06);}
+  .tag{box-shadow:0 0 14px rgba(63,224,208,.12);}
+  .discount-tag{box-shadow:0 0 16px rgba(255,47,146,.28);}
+  .section-head .eyebrow-accent{box-shadow:0 0 30px rgba(255,47,146,.18), inset 0 0 20px rgba(124,92,255,.08);}
+
 </style>
 </head>
 <body>
@@ -173,6 +211,11 @@
 </header>
 
 <section class="hero wrap">
+
+  <div class="ambassador-hero" aria-label="Embaixador BeOn">
+    <span class="ambassador-kicker">BE·ON AMBASSADOR</span>
+    <span class="ambassador-name">Matheus Alves Mascena</span>
+  </div>
   <span class="eyebrow">Line-ups selecionados · Ingressos oficiais Ingresse</span>
   <h1 class="display">SEU PRÓXIMO<br>EVENTO ESTÁ AQUI</h1>
   <p>Os melhores eventos de música eletrônica de São Paulo em um só lugar, com 5% de desconto automático no ingresso.</p>
@@ -205,12 +248,12 @@
     <p>Todos os ingressos com desconto garantido e compra 100% oficial.</p>
   </div>
   <div class="events-grid">
-    <div class="card"><div class="card-img"><span class="tag">21 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG-KJTFGlUei_pam-GZK5zQY6b3nESvqBc0yO_RWEGQ7fZ_T5ciWCouW6B&s=10" alt="UNREAL x The Grid"></div><div class="card-body"><h3>UNREAL x The Grid</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Kuko, Cloudy, Serafina e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-    <div class="card"><div class="card-img"><span class="tag">19 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang"></div><div class="card-body"><h3>The Grid: Outworld by Klang</h3><div class="meta"><span><b>Local:</b> Arca, SP</span><span><b>Line-up:</b> Klangkuenstler</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-    <div class="card"><div class="card-img"><span class="tag">26 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg" alt="Adriatique - X São Paulo"></div><div class="card-body"><h3>Adriatique — X São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Adriatique</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/91444?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-    <div class="card"><div class="card-img"><span class="tag">17 out 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10" alt="Crochestra Brasil"></div><div class="card-body"><h3>Crochestra Brasil</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Freedom Fighters X Meir Briskman</span></div><a class="buy-btn" href="https://cart.ingresse.com/7bc10b1b-bef9-45cf-a45b-135651fd921a/tickets?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-    <div class="card"><div class="card-img"><span class="tag">7 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp" alt="Music On São Paulo"></div><div class="card-body"><h3>Music On — São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Marco Carola e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
-    <div class="card"><div class="card-img"><span class="tag">28 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg" alt="One Life São Paulo - Michael Bibi"></div><div class="card-body"><h3>One Life SP — Michael Bibi</h3><div class="meta"><span><b>Local:</b> Arena Pinheiros, SP</span><span><b>Line-up:</b> Michael Bibi e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">19 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang"></div><div class="card-body"><h3>The Grid: Outworld by Klang</h3><div class="meta"><span><b>Local:</b> Arca, SP</span><span><b>Line-up:</b> Klangkuenstler</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">26 set 2026</span><span class="discount-tag">5% OFF</span><img src="https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg" alt="Adriatique - X São Paulo"></div><div class="card-body"><h3>Adriatique — X São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Adriatique</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/91444?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">17 out 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10" alt="Crochestra Brasil"></div><div class="card-body"><h3>Crochestra Brasil</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Freedom Fighters X Meir Briskman</span></div><a class="buy-btn" href="https://cart.ingresse.com/7bc10b1b-bef9-45cf-a45b-135651fd921a/tickets?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">7 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp" alt="Music On São Paulo"></div><div class="card-body"><h3>Music On — São Paulo</h3><div class="meta"><span><b>Local:</b> Vale do Anhangabaú, SP</span><span><b>Line-up:</b> Marco Carola e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">21 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG-KJTFGlUei_pam-GZK5zQY6b3nESvqBc0yO_RWEGQ7fZ_T5ciWCouW6B&s=10" alt="UNREAL x The Grid"></div><div class="card-body"><h3>UNREAL x The Grid</h3><div class="meta"><span><b>Local:</b> Komplexo Tempo, SP</span><span><b>Line-up:</b> Kuko, Cloudy, Serafina e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
+<div class="card"><div class="card-img"><span class="tag">28 nov 2026</span><span class="discount-tag">5% OFF</span><img src="https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg" alt="One Life São Paulo - Michael Bibi"></div><div class="card-body"><h3>One Life SP — Michael Bibi</h3><div class="meta"><span><b>Local:</b> Arena Pinheiros, SP</span><span><b>Line-up:</b> Michael Bibi e mais</span></div><a class="buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a></div></div>
   </div>
 </section>
 
