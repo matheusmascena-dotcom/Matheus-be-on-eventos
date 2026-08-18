@@ -1,0 +1,39 @@
+name: Fix ambassador layout
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix-layout:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reposition ambassador badge
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          css = '''\n  /* Keep ambassador badge above the line-ups eyebrow */\n  .hero{display:flex; flex-direction:column; align-items:center;}\n  .ambassador-hero{order:0;}\n  .hero > .eyebrow{order:1;}\n  .hero > h1{order:2;}\n  .hero > p{order:3;}\n  .hero > .code-box{order:4;}\n  .hero > .cta-row{order:5;}\n'''
+          marker = '  /* Ambassador layout fix */'
+          if marker not in s:
+              s = s.replace('</style>', marker + css + '</style>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit layout fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'fix: reposition ambassador above line-ups'
+          git push
+      - name: Remove one-time workflow
+        shell: bash
+        run: |
+          git rm .github/workflows/fix-ambassador-layout.yml || true
+          git commit -m 'chore: remove one-time layout workflow' || true
+          git push || true
