@@ -1,0 +1,27 @@
+{
+  "music-on-sao-paulo": {
+    "ok": false,
+    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "folder": "https://drive.google.com/drive/u/0/folders/10TbYEtu-fCFfb0PfqFDN5AH4AE87nFIm"
+  },
+  "one-life-sao-paulo": {
+    "ok": false,
+    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "folder": "https://drive.google.com/drive/folders/1x6Lub-LVEhI3UoqQRwvuky4_HNhiPpuR"
+  },
+  "the-grid-outworld": {
+    "ok": false,
+    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "folder": "https://drive.google.com/drive/u/0/folders/1-W1ZjLEVmvP-bqXiyE5Oj4VmZwj5edxd"
+  },
+  "adriatique-x-sao-paulo": {
+    "ok": false,
+    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-"
+  },
+  "crochestra-brasil": {
+    "ok": false,
+    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "folder": "https://drive.google.com/drive/folders/11Efq_IfM4i-Lt7JcxaDUENMIizHOfl7y"
+  }
+}
