@@ -29,7 +29,7 @@
   },
   "the-grid-outworld": {
     "ok": true,
-    "available": 18,
+    "available": 26,
     "selected": 8,
     "requested": 8,
     "credits": [
@@ -39,12 +39,26 @@
         "icon": "📷"
       }
     ],
-    "warning": "Foram encontradas 18 foto(s) acessíveis; 8 foram selecionadas de 8 solicitadas."
+    "warning": "Foram encontradas 26 foto(s) acessíveis; 8 foram selecionadas de 8 solicitadas."
   },
   "adriatique-x-sao-paulo": {
-    "ok": false,
-    "error": "Nenhuma imagem pôde ser baixada desta pasta. A galeria foi pulada.",
-    "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-"
+    "ok": true,
+    "available": 4,
+    "selected": 4,
+    "requested": 8,
+    "credits": [
+      {
+        "label": "BeOn Entertainment",
+        "instagram": "https://www.instagram.com/beonentertainment/",
+        "icon": "📷"
+      },
+      {
+        "label": "Tim Buiting",
+        "instagram": null,
+        "icon": "📷"
+      }
+    ],
+    "warning": "Galeria Adriatique restaurada da versão anterior do site porque os arquivos do Drive não puderam ser baixados."
   },
   "crochestra-brasil": {
     "ok": true,
