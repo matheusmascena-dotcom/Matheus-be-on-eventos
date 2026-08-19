@@ -3,25 +3,43 @@
   "photos": [
     {
       "src": "assets/galleries/one-life-sao-paulo/01.jpg",
-      "name": "manu bibi1-6 (1)",
-      "credit": null
+      "name": "manu bibi1-5"
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/02.jpg",
-      "name": "9K4A5328",
-      "credit": null
+      "name": "@mellamojulian - BIBI_6"
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/03.jpg",
-      "name": "9K4A5225",
-      "credit": null
+      "name": "9K4A5115"
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/04.jpg",
-      "name": "9K4A5745",
-      "credit": null
+      "name": "9K4A5745"
+    },
+    {
+      "src": "assets/galleries/one-life-sao-paulo/05.jpg",
+      "name": "3"
+    },
+    {
+      "src": "assets/galleries/one-life-sao-paulo/06.jpg",
+      "name": "9K4A5333"
+    },
+    {
+      "src": "assets/galleries/one-life-sao-paulo/07.jpg",
+      "name": "2"
+    },
+    {
+      "src": "assets/galleries/one-life-sao-paulo/08.jpg",
+      "name": "9K4A5079"
     }
   ],
-  "credit": null,
+  "credits": [
+    {
+      "label": "BeOn Entertainment",
+      "instagram": "https://www.instagram.com/beonentertainment/",
+      "icon": "📷"
+    }
+  ],
   "warning": null
 }

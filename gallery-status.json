@@ -2,34 +2,55 @@
   "music-on-sao-paulo": {
     "ok": true,
     "available": 25,
-    "selected": 4,
-    "credit": null,
+    "selected": 8,
+    "requested": 8,
+    "credits": [
+      {
+        "label": "BeOn Entertainment",
+        "instagram": "https://www.instagram.com/beonentertainment/",
+        "icon": "📷"
+      }
+    ],
     "warning": null
   },
   "one-life-sao-paulo": {
     "ok": true,
     "available": 31,
-    "selected": 4,
-    "credit": null,
+    "selected": 8,
+    "requested": 8,
+    "credits": [
+      {
+        "label": "BeOn Entertainment",
+        "instagram": "https://www.instagram.com/beonentertainment/",
+        "icon": "📷"
+      }
+    ],
     "warning": null
   },
   "the-grid-outworld": {
     "ok": true,
-    "available": 30,
-    "selected": 4,
-    "credit": null,
-    "warning": null
+    "available": 18,
+    "selected": 8,
+    "requested": 8,
+    "credits": [
+      {
+        "label": "BeOn Entertainment",
+        "instagram": "https://www.instagram.com/beonentertainment/",
+        "icon": "📷"
+      }
+    ],
+    "warning": "Foram encontradas 18 foto(s) acessíveis; 8 foram selecionadas de 8 solicitadas."
   },
   "adriatique-x-sao-paulo": {
-    "ok": true,
-    "available": 11,
-    "selected": 4,
-    "credit": "Tim Buiting",
-    "warning": "Alguns arquivos da pasta não estavam publicamente acessíveis e foram ignorados."
+    "ok": false,
+    "error": "Nenhuma imagem pôde ser baixada desta pasta. A galeria foi pulada.",
+    "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-"
   },
   "crochestra-brasil": {
-    "ok": false,
-    "error": "Apenas 0 imagem(ns) puderam ser baixadas; são necessárias pelo menos 4. Verifique se os arquivos da pasta estão como “Qualquer pessoa com o link”.\nhestra_0011.jpg\nProcessing file 1EE-UZ15Ze5M561vHoKpWQifbqQ220Ldo 09_01_26-Crochestra_0014.jpg\nProcessing file 1_6RybI7Y0LzhDKM4a_RMOkAt1XBFid0V 09_01_26-Crochestra_0015.jpg\nProcessing file 1P2rS1tojpftD39v5cCnH7PXt2muEp03E 09_01_26-Crochestra_0016.jpg\nProcessing file 1I2739mgyTVtFSCmfQJ6bvIVI7Gw-KnO2 09_01_26-Crochestra_0018.jpg\nProcessing file 1EeTeK3I_qZEpAoEsX1q4tqw1tkONoKI0 10_01_26-Crochestra_0002.jpg\nProcessing file 11ujATNaowfUVkMVSOsRDuZ72kToIrq8s 10_01_26-Crochestra_0006 (1).jpg\nProcessing file 1Z85LinpJF-sOMorGbVuAv5JYYWUJYg-T 10_01_26-Crochestra_0009.jpg\nProcessing file 11BB3w6kaiWluOWrEEA8Gy9-SknNWe8ZD 10_01_26-Crochestra_0010.jpg\nProcessing file 1VRLEXu_S2xl6dAUMrHWIGNNpO9eHzGpF 10_01_26-Crochestra_0011.jpg\nProcessing file 1_EhoNZh_Pqtfv8j3UsxfiJk1tevoegGW 10_01_26-Crochestra_0013.jpg\nProcessing file 1puwUUl_GBkwgiVpXgQY_kbGbFWDWpPVu 10_01_26-Crochestra_0014.jpg\nProcessing file 1xutmIvd_1NJgjkn3nl9KNUkuygmdbwe4 10_01_26-Crochestra_0016.jpg\nProcessing file 11jeIjerOYjEoUXGxO2SHZTYqIiEQLRcr 10_01_26-Crochestra_0017.jpg\nProcessing file 1tdx7wYjfz8Zg_lv5EqHERYniCCu_AmTw 10_01_26-Crochestra_0021.jpg\nProcessing file 1GhCDw7iDXL44bNpCMGt_0rJ-Xn98qPub 10_01_26-Crochestra_0023.jpg\nProcessing file 1NWn4hcO-DNzqCpQJpHrrbsYq-H3bmL9U 10_01_26-Crochestra_0024.jpg\nProcessing file 1dbm6VYxdpau3lMs1pPUCYAowkscSsULn 10_01_26-Crochestra_0025.jpg\nProcessing file 1b_ruFW5HLGEHkEMHE1bPtoW3Y55hiFhM DSC01554.jpg\nProcessing file 1LR5gjOZsjP3d2riAPLGSL-SSZ3KEdiQD DSC01559-Enhanced-NR.jpg\nProcessing file 1zsJY2aEPIwIkd6fh4AjCygCpfAHG8wT_ DSC01841-Enhanced-NR.jpg\nProcessing file 1MNRE4KGYHBiOogP324sIE3p1mHVeWxmG IGC06314.jpg\n\nRetrieving folder contents\nRetrieving folder contents completed\nBuilding directory structure\nBuilding directory structure completed\nFailed to retrieve file url:\n\n\tCannot retrieve the public link of the file. You may need to change\n\tthe permission to 'Anyone with the link', or have had many accesses.\n\tCheck FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=1SgcLVkiqIAgCVgYIDjbP9FcvpPsYKeZP\n\nbut Gdown can't. Please check connections and permissions.\n",
-    "folder": "https://drive.google.com/drive/folders/11Efq_IfM4i-Lt7JcxaDUENMIizHOfl7y"
+    "ok": true,
+    "skipped": true,
+    "available": 0,
+    "selected": 0,
+    "warning": "Galeria pausada até que haja fotos acessíveis."
   }
 }

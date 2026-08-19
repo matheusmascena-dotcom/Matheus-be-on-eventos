@@ -3,25 +3,43 @@
   "photos": [
     {
       "src": "assets/galleries/music-on-sao-paulo/01.jpg",
-      "name": "FAT_2939",
-      "credit": null
+      "name": "IMG_2840"
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/02.jpg",
-      "name": "IMG_2874",
-      "credit": null
+      "name": "IMG_2775"
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/03.jpg",
-      "name": "FAT_2651",
-      "credit": null
+      "name": "FAT_2558"
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/04.jpg",
-      "name": "FAT_2558",
-      "credit": null
+      "name": "FAT_1949"
+    },
+    {
+      "src": "assets/galleries/music-on-sao-paulo/05.jpg",
+      "name": "IMG_2874"
+    },
+    {
+      "src": "assets/galleries/music-on-sao-paulo/06.jpg",
+      "name": "FAT_2009"
+    },
+    {
+      "src": "assets/galleries/music-on-sao-paulo/07.jpg",
+      "name": "IMG_2808"
+    },
+    {
+      "src": "assets/galleries/music-on-sao-paulo/08.jpg",
+      "name": "FAT_3073"
     }
   ],
-  "credit": null,
+  "credits": [
+    {
+      "label": "BeOn Entertainment",
+      "instagram": "https://www.instagram.com/beonentertainment/",
+      "icon": "📷"
+    }
+  ],
   "warning": null
 }
