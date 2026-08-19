@@ -1,10 +1,7 @@
 {
   "source": "Eventos - Be On _ 2026(1)(1).xlsx — Página2",
-  "version": 5,
-  "beon_credit": {
-    "label": "BeOn Entertainment",
-    "instagram": "https://www.instagram.com/beonentertainment/"
-  },
+  "version": 6,
+  "beon_credit": {"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/"},
   "events": {
     "music-on-sao-paulo": {"sheet_event":"Music On","folder":"https://drive.google.com/drive/u/0/folders/10TbYEtu-fCFfb0PfqFDN5AH4AE87nFIm","credits":["beon"],"count":8,"enabled":true},
     "one-life-sao-paulo": {"sheet_event":"One Life","folder":"https://drive.google.com/drive/folders/1x6Lub-LVEhI3UoqQRwvuky4_HNhiPpuR","credits":["beon"],"count":8,"enabled":true},
