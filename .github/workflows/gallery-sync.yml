@@ -25,14 +25,13 @@ jobs:
       - name: Download folders, randomly select photos and build gallery data
         shell: python
         run: |
-          import json, os, random, shutil, subprocess
+          import json, random, shutil, subprocess
           from pathlib import Path
 
           cfg = json.loads(Path('gallery-config.json').read_text(encoding='utf-8'))
           out_root = Path('assets/galleries')
           out_root.mkdir(parents=True, exist_ok=True)
           status = {}
-
           image_ext = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'}
           rng = random.SystemRandom()
 
@@ -43,29 +42,21 @@ jobs:
               if dest.exists(): shutil.rmtree(dest)
               tmp.mkdir(parents=True, exist_ok=True)
               dest.mkdir(parents=True, exist_ok=True)
-
               try:
-                  cmd = ['gdown', '--folder', item['folder'], '-O', str(tmp), '--remaining-ok']
+                  cmd = ['gdown', '--folder', item['folder'], '-O', str(tmp)]
                   proc = subprocess.run(cmd, text=True, capture_output=True, timeout=240)
                   if proc.returncode != 0:
                       raise RuntimeError((proc.stderr or proc.stdout or 'gdown failed')[-1800:])
-
                   files = [p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in image_ext]
                   if not files:
                       raise RuntimeError('Nenhuma imagem pública foi encontrada na pasta do Google Drive.')
-
                   chosen = rng.sample(files, min(int(item.get('count', 4)), len(files)))
                   photos = []
                   for idx, src in enumerate(chosen, 1):
                       ext = src.suffix.lower()
                       target = dest / f'{idx:02d}{ext}'
                       shutil.copy2(src, target)
-                      photos.append({
-                          'src': f'assets/galleries/{slug}/{target.name}',
-                          'name': src.stem,
-                          'credit': item.get('credit')
-                      })
-
+                      photos.append({'src': f'assets/galleries/{slug}/{target.name}', 'name': src.stem, 'credit': item.get('credit')})
                   status[slug] = {'ok': True, 'available': len(files), 'selected': len(photos), 'credit': item.get('credit')}
                   (out_root / f'{slug}.json').write_text(json.dumps({'event': item['sheet_event'], 'photos': photos, 'credit': item.get('credit')}, ensure_ascii=False, indent=2), encoding='utf-8')
               except Exception as exc:
@@ -83,18 +74,14 @@ jobs:
           from pathlib import Path
           p = Path('event.html')
           html = p.read_text(encoding='utf-8')
-
           if 'id="beon-gallery-grid"' not in html:
               html = html.replace('<iframe id="frame" loading="lazy"></iframe>', '<div id="beon-gallery-grid" class="beon-gallery-grid"></div><div id="beon-gallery-credit" class="beon-gallery-credit"></div><iframe id="frame" loading="lazy" style="display:none"></iframe>', 1)
-
           if 'id="beon-gallery-styles"' not in html:
               css = '''<style id="beon-gallery-styles">.beon-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}.beon-gallery-item{position:relative;aspect-ratio:4/3;overflow:hidden;border:1px solid #ffffff14;border-radius:12px;background:#090711;cursor:pointer}.beon-gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}.beon-gallery-item:hover img{transform:scale(1.035)}.beon-gallery-item:after{content:'↗';position:absolute;right:8px;bottom:8px;padding:5px 7px;border-radius:99px;background:#08060dcc;color:var(--c);font-size:10px}.beon-gallery-credit{margin-top:11px;color:var(--u);font-size:9px;text-align:right}.beon-gallery-credit strong{color:var(--c)}@media(max-width:760px){.beon-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}@media(max-width:420px){.beon-gallery-grid{grid-template-columns:1fr}}</style>'''
               html = html.replace('</head>', css + '</head>', 1)
-
           if 'function loadBeonGallery' not in html:
               js = '''async function loadBeonGallery(){const grid=document.getElementById('beon-gallery-grid');const credit=document.getElementById('beon-gallery-credit');if(!grid)return;try{const r=await fetch('assets/galleries/'+ev[0]+'.json',{cache:'no-store'});if(!r.ok)throw new Error('gallery unavailable');const g=await r.json();grid.innerHTML='';(g.photos||[]).forEach(p=>{const a=document.createElement('a');a.className='beon-gallery-item';a.href=p.src;a.target='_blank';a.rel='noopener';const img=document.createElement('img');img.src=p.src;img.alt=p.name||ev[1];img.loading='lazy';a.appendChild(img);grid.appendChild(a)});if(g.credit){credit.innerHTML='📷 Fotos por <strong>'+g.credit+'</strong>';}else{credit.textContent='';}}catch(e){grid.innerHTML='<div style="grid-column:1/-1;padding:18px;border:1px dashed #ffffff18;border-radius:12px;color:var(--u);font-size:10px;text-align:center">As fotos desta galeria estão sendo preparadas.</div>';credit.textContent='';}}loadBeonGallery();'''
               html = html.replace("const T={'pt-BR':", js + "const T={'pt-BR':", 1)
-
           p.write_text(html, encoding='utf-8')
 
       - name: Commit generated galleries
