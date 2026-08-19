@@ -27,8 +27,7 @@ jobs:
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
 
-          # 1) Put BE·ON AMBASSADOR immediately before the hero block,
-          #    which puts it directly above the “Line-ups selecionados” label.
+          # Keep the ambassador badge directly above the hero/line-up label.
           amb_re = re.compile(r'<section class="amb-wrap w">.*?</section>', re.S)
           m = amb_re.search(html)
           if m:
@@ -38,54 +37,89 @@ jobs:
               if hero_marker in html:
                   html = html.replace(hero_marker, amb + hero_marker, 1)
 
-          # 2) Use the exact profile photo supplied by Matheus, stored in the repo.
+          # Keep Matheus's supplied profile image local to the repository.
           html = html.replace('https://unavatar.io/instagram/mat_mascena97', 'assets/profile-matheus.svg')
           html = html.replace('src="profile-photo.svg"', 'src="assets/profile-matheus.svg"')
 
-          # 3) Add a dedicated, highly visible coupon badge under the name.
-          if 'class="profile-code-badge"' not in html:
+          # Add a dedicated coupon badge below the name once.
+          if 'class="profile-code-badge"' not in html and '<h3>Matheus Alves Mascena — 29 anos.</h3>' in html:
               html = html.replace(
                   '<h3>Matheus Alves Mascena — 29 anos.</h3>',
                   '<h3>Matheus Alves Mascena — 29 anos.</h3><div class="profile-code-badge">CUPOM: <strong>MATHEUSMASCENA</strong> · 5% OFF</div>',
                   1,
               )
 
-          # 4) Override the previous visual rules without touching event content.
-          fixes = '''<style id="final-layout-fixes-v2">
-          .amb-wrap{padding:18px 0 8px;text-align:center}
-          .amb{display:inline-flex;flex-direction:column;padding:10px 22px;border:1px solid #3fe0d055;border-radius:16px;background:linear-gradient(135deg,#7c5cff18,#ff2f9210);box-shadow:0 0 24px #7c5cff15;text-transform:uppercase}
-          .amb small{font-size:8px;letter-spacing:.22em;color:var(--c)}
-          .amb strong{font:22px 'Bebas Neue';letter-spacing:.08em}
-          .profile{grid-template-columns:200px minmax(0,1fr);gap:34px;padding:30px;align-items:center}
-          .profile-photo{width:200px;height:200px;object-fit:contain;object-position:center;background:#0e0a17;border-radius:18px;border:2px solid #3fe0d077;display:block;padding:0}
-          .profile>div:last-child{text-align:left;min-width:0}
-          .profile h3{margin:4px 0 8px;color:var(--c);text-shadow:0 0 18px #3fe0d055}
-          .profile-code-badge{display:inline-block;margin:0 0 14px;padding:7px 11px;border:1px solid #ff2f9255;border-radius:9px;background:#ff2f9212;color:var(--m);font-size:10px;font-weight:700;letter-spacing:.04em}
-          .profile-code-badge strong{color:var(--m);font-weight:800}
-          .profile p{margin:0 0 18px;line-height:1.75}
-          .cards{align-items:stretch}
-          .cards .card{height:100%;min-height:460px;display:flex;flex-direction:column}
-          .cards .pic{height:220px;flex:none;overflow:hidden;background:#0e0a17;display:flex;align-items:center;justify-content:center}
-          .cards .pic img{width:100%;height:100%;object-fit:contain!important;object-position:center;display:block;transition:.4s;image-rendering:auto}
-          .cards .body{flex:1;display:flex;flex-direction:column}
-          .cards .acts{margin-top:auto;padding-top:14px}
-          .next .ni .count{margin-bottom:18px}
-          .next .ni>.buy{display:block;margin-top:6px}
+          # Highlight the coupon in the main introductory text.
+          html = html.replace(
+              'e <b>5% OFF</b> usando o código: MATHEUSMASCENA.',
+              'e <b class="promo-off">5% OFF</b> usando o código: <strong class="promo-code">MATHEUSMASCENA</strong>.',
+              1,
+          )
+
+          # Highlight the code inside the personal presentation paragraph.
+          html = html.replace(
+              'Utilize meu cupom MATHEUSMASCENA e garanta',
+              'Utilize meu cupom <strong class="profile-code-inline">MATHEUSMASCENA</strong> e garanta',
+              1,
+          )
+          html = html.replace(
+              'Use my coupon MATHEUSMASCENA and get',
+              'Use my coupon <strong class="profile-code-inline">MATHEUSMASCENA</strong> and get',
+              1,
+          )
+          html = html.replace(
+              'Usa mi cupón MATHEUSMASCENA y consigue',
+              'Usa mi cupón <strong class="profile-code-inline">MATHEUSMASCENA</strong> y consigue',
+              1,
+          )
+
+          # Center the short text immediately above the presentation card.
+          intro = 'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b>5% OFF</b> usando o código: MATHEUSMASCENA.'
+          pos = html.rfind(intro)
+          if pos >= 0:
+              start = html.rfind('<p', 0, pos)
+              end = html.find('</p>', pos)
+              if start >= 0 and end >= 0:
+                  tag_end = html.find('>', start)
+                  opening = html[start:tag_end]
+                  if 'class=' in opening:
+                      opening = re.sub(r'class="([^"]*)"', lambda mm: 'class="' + mm.group(1) + ' footer-intro"', opening, count=1)
+                  else:
+                      opening += ' class="footer-intro"'
+                  html = html[:start] + opening + html[tag_end:end+4] + html[end+4:]
+
+          # One final override block keeps the presentation visually balanced.
+          fixes = '''<style id="presentation-refinements-v3">
+          .footer-intro{display:block!important;width:min(900px,100%);max-width:900px!important;margin:0 auto 18px!important;padding:0 24px!important;text-align:center!important;color:var(--u);font-size:11px;line-height:1.7}
+          .footer-intro .promo-off{color:var(--c);font-weight:800}
+          .footer-intro .promo-code{color:var(--m);font-weight:800;text-shadow:0 0 10px #ff2f9238}
+          .hero .promo-off{color:var(--c);font-weight:800}
+          .hero .promo-code{color:var(--m);font-weight:800;text-shadow:0 0 12px #ff2f9238}
+          .profile{max-width:900px;width:calc(100% - 48px);grid-template-columns:170px minmax(0,1fr);gap:30px;padding:28px 30px;margin:0 auto;border-radius:22px;align-items:center}
+          .profile-photo{width:170px;height:240px;max-width:100%;border-radius:20px;border:1px solid #3fe0d088;object-fit:contain;object-position:center;background:linear-gradient(145deg,#0e0a17,#171024);box-shadow:0 10px 30px #0006;display:block;margin:0 auto}
+          .profile>div:last-child{min-width:0;text-align:left}
+          .profile h3{font-size:34px;margin:0 0 9px;color:var(--c);text-shadow:0 0 18px #3fe0d055;line-height:1}
+          .profile-code-badge{display:inline-flex;align-items:center;gap:4px;margin:0 0 14px;padding:7px 11px;border:1px solid #ff2f9255;border-radius:9px;background:#ff2f9212;color:var(--m);font-size:10px;font-weight:700;letter-spacing:.04em;box-shadow:0 0 16px #ff2f9212}
+          .profile-code-badge strong,.profile-code-inline{color:var(--m)!important;font-weight:800;text-shadow:0 0 9px #ff2f9238}
+          .profile p{font-size:11px;line-height:1.78;margin:0 0 18px;color:var(--u)}
+          .profile .links{gap:8px;align-items:center}
+          .profile .links a{padding:9px 11px}
           @media(max-width:760px){
-            .amb-wrap{padding:14px 0 6px}
-            .profile{grid-template-columns:1fr;gap:18px;padding:22px;text-align:center}
-            .profile-photo{width:160px;height:160px;margin:auto}
+            .footer-intro{padding:0 18px!important}
+            .profile{width:calc(100% - 32px);grid-template-columns:1fr;gap:18px;padding:22px 18px;text-align:center}
+            .profile-photo{width:150px;height:215px;margin:0 auto}
             .profile>div:last-child{text-align:center}
-            .profile p{line-height:1.65}
+            .profile h3{font-size:29px;line-height:1.05}
             .profile .links{justify-content:center}
-            .cards .pic{height:230px}
           }
           </style>'''
-          if 'id="final-layout-fixes-v2"' not in html:
+          if 'id="presentation-refinements-v3"' in html:
+              html = re.sub(r'<style id="presentation-refinements-v3">.*?</style>', fixes, html, count=1, flags=re.S)
+          else:
               html = html.replace('</head>', fixes + '</head>', 1)
 
           p.write_text(html, encoding='utf-8')
-          print('Requested BeOn visual corrections applied.')
+          print('Presentation refinements applied.')
 
       - name: Commit changes
         run: |
@@ -96,5 +130,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Apply ambassador photo and layout corrections"
+          git commit -m "Refine presentation alignment and coupon emphasis"
           git push
