@@ -1,0 +1,1 @@
+Backup marker created before gallery implementation. The prior published site remains recoverable from Git history; this marker identifies the pre-gallery state for the next gallery commits.
