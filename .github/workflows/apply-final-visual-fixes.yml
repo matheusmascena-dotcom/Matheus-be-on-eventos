@@ -1,0 +1,93 @@
+name: Apply final visual fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-final-visual-fixes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixes:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply layout and profile fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+
+          # Move the ambassador badge immediately above the Line-ups label.
+          amb_re = re.compile(r'<div class="amb">.*?</div>', re.S)
+          m = amb_re.search(html)
+          if m:
+              amb = m.group(0)
+              html = html[:m.start()] + html[m.end():]
+              marker = '<div class="ey" data-t="ey">'
+              if marker in html and 'class="amb"' not in html:
+                  html = html.replace(marker, amb + marker, 1)
+
+          # Use the current Instagram profile picture through an avatar proxy.
+          profile_img = 'https://unavatar.io/instagram/mat_mascena97'
+          html, n = re.subn(
+              r'(<div class="profile"[^>]*>.*?<img\s+src=")[^"]+("[^>]*>)',
+              lambda m: m.group(1) + profile_img + m.group(2),
+              html, count=1, flags=re.S,
+          )
+          if n == 0:
+              print('Profile image pattern not found; existing image preserved.')
+
+          fixes = '''<style id="final-layout-fixes">
+          .hero .amb{margin-bottom:0}
+          .hero .ey{margin-top:10px}
+          .next .ni .count{margin-bottom:16px}
+          .next .ni>.buy{display:block;margin-top:4px}
+          .cards{align-items:stretch}
+          .cards .card{height:100%;min-height:100%}
+          .cards .pic{height:220px;aspect-ratio:auto;flex:none;overflow:hidden}
+          .cards .pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;image-rendering:auto}
+          .cards .body{flex:1;display:flex;flex-direction:column}
+          .cards .acts{margin-top:auto;padding-top:12px}
+          .profile{grid-template-columns:170px minmax(0,1fr);align-items:center;gap:30px;padding:28px}
+          .profile img{width:170px;height:170px;display:block;object-fit:cover}
+          .profile>div:last-child{text-align:left;min-width:0}
+          .profile h3{margin:4px 0 8px}
+          .profile p{margin:0 0 15px;line-height:1.65}
+          .profile .links{gap:9px}
+          .profile .links a{display:inline-flex;align-items:center;gap:5px}
+          @media(max-width:760px){
+            .profile{grid-template-columns:1fr;gap:18px;padding:22px}
+            .profile img{width:150px;height:150px;margin:auto}
+            .profile>div:last-child{text-align:center}
+            .profile p{line-height:1.6}
+            .profile .links{justify-content:center}
+            .cards .pic{height:230px}
+          }
+          </style>'''
+          if 'id="final-layout-fixes"' not in html:
+              html = html.replace('</head>', fixes + '</head>', 1)
+
+          p.write_text(html, encoding='utf-8')
+          print('Final visual fixes applied.')
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Fix ambassador profile, event card sizing and featured CTA"
+          git push
