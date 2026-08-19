@@ -3,24 +3,25 @@
   "photos": [
     {
       "src": "assets/galleries/music-on-sao-paulo/01.jpg",
-      "name": "FAT_1911",
+      "name": "IMG_2758",
       "credit": null
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/02.jpg",
-      "name": "218_@ClickdoClayton_",
+      "name": "100_@ClickdoClayton_7502",
       "credit": null
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/03.jpg",
-      "name": "IMG_2808",
+      "name": "FAT_3073",
       "credit": null
     },
     {
       "src": "assets/galleries/music-on-sao-paulo/04.jpg",
-      "name": "IMG_2874",
+      "name": "FAT_3776",
       "credit": null
     }
   ],
-  "credit": null
+  "credit": null,
+  "warning": null
 }

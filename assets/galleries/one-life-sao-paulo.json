@@ -3,24 +3,25 @@
   "photos": [
     {
       "src": "assets/galleries/one-life-sao-paulo/01.jpg",
-      "name": "9K4A5328",
+      "name": "9K4A5038",
       "credit": null
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/02.jpg",
-      "name": "9K4A5965",
+      "name": "manu bibi1-3",
       "credit": null
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/03.jpg",
-      "name": "manu bibi1-31",
+      "name": "@mellamojulian - BIBI_7",
       "credit": null
     },
     {
       "src": "assets/galleries/one-life-sao-paulo/04.jpg",
-      "name": "manu bibi1-5",
+      "name": "@mellamojulian - BIBI_15",
       "credit": null
     }
   ],
-  "credit": null
+  "credit": null,
+  "warning": null
 }
