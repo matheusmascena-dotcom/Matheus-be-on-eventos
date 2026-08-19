@@ -1,27 +1,29 @@
 {
   "music-on-sao-paulo": {
-    "ok": false,
-    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
-    "folder": "https://drive.google.com/drive/u/0/folders/10TbYEtu-fCFfb0PfqFDN5AH4AE87nFIm"
+    "ok": true,
+    "available": 25,
+    "selected": 4,
+    "credit": null
   },
   "one-life-sao-paulo": {
-    "ok": false,
-    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
-    "folder": "https://drive.google.com/drive/folders/1x6Lub-LVEhI3UoqQRwvuky4_HNhiPpuR"
+    "ok": true,
+    "available": 31,
+    "selected": 4,
+    "credit": null
   },
   "the-grid-outworld": {
     "ok": false,
-    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "error": "...\nFrom: https://drive.google.com/uc?id=1HB9ZswOV2G8NI4OH7m65-Y1EsiRMD2Fw\nTo: /tmp/beon-gallery/the-grid-outworld/82_@pedrofatore_FAT_9287.jpg\n\n  0%|          | 0.00/13.8M [00:00<?, ?B/s]\n 11%|█▏        | 1.57M/13.8M [00:00<00:00, 14.8MB/s]\n 80%|███████▉  | 11.0M/13.8M [00:00<00:00, 41.4MB/s]\n100%|██████████| 13.8M/13.8M [00:00<00:00, 46.1MB/s]\nDownloading...\nFrom: https://drive.google.com/uc?id=16I6kvFAmbTcqN273nKggjlJ5ZyZGoAwn\nTo: /tmp/beon-gallery/the-grid-outworld/83_@pedrofatore_FAT_9288.jpg\n\n  0%|          | 0.00/14.1M [00:00<?, ?B/s]\n 11%|█         | 1.57M/14.1M [00:00<00:00, 14.8MB/s]\n100%|██████████| 14.1M/14.1M [00:00<00:00, 76.0MB/s]\nDownloading...\nFrom: https://drive.google.com/uc?id=1jXERP4BjKgTo8C2wsR2PVxvOOjrBP9Op\nTo: /tmp/beon-gallery/the-grid-outworld/88_@pedrofatore_FAT_9325.jpg\n\n  0%|          | 0.00/12.7M [00:00<?, ?B/s]\n 12%|█▏        | 1.57M/12.7M [00:00<00:00, 15.1MB/s]\n 37%|███▋      | 4.72M/12.7M [00:00<00:00, 13.1MB/s]\n100%|██████████| 12.7M/12.7M [00:00<00:00, 29.5MB/s]\nDownloading...\nFrom: https://drive.google.com/uc?id=1COsZNJqwQisBKjuBaMVmb8AkffJbPg1V\nTo: /tmp/beon-gallery/the-grid-outworld/89_@pedrofatore_FAT_9331.jpg\n\n  0%|          | 0.00/13.2M [00:00<?, ?B/s]\n 12%|█▏        | 1.57M/13.2M [00:00<00:00, 14.1MB/s]\n 83%|████████▎ | 11.0M/13.2M [00:00<00:00, 38.0MB/s]\n100%|██████████| 13.2M/13.2M [00:00<00:00, 41.3MB/s]\nFailed to retrieve file url:\n\n\tCannot retrieve the public link of the file. You may need to change\n\tthe permission to 'Anyone with the link', or have had many accesses.\n\tCheck FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=18W1IHLum_a6i9ySyqNYy0aj1u6O1EoIM\n\nbut Gdown can't. Please check connections and permissions.\n",
     "folder": "https://drive.google.com/drive/u/0/folders/1-W1ZjLEVmvP-bqXiyE5Oj4VmZwj5edxd"
   },
   "adriatique-x-sao-paulo": {
     "ok": false,
-    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "error": "Retrieving folder contents\nRetrieving folder contents completed\nBuilding directory structure\nBuilding directory structure completed\nFailed to retrieve file url:\n\n\tCannot retrieve the public link of the file. You may need to change\n\tthe permission to 'Anyone with the link', or have had many accesses.\n\tCheck FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=1xtpRxqTrwo8DvfBW846gY_befxXH0Rtb\n\nbut Gdown can't. Please check connections and permissions.\n",
     "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-"
   },
   "crochestra-brasil": {
     "ok": false,
-    "error": "usage: gdown [-h] [-V] [-O OUTPUT] [-q] [--proxy PROXY] [--speed SPEED]\n             [--no-cookies] [--no-check-certificate] [--continue] [--folder]\n             [--json] [--format FORMAT] [--user-agent USER_AGENT]\n             url_or_id\ngdown: error: unrecognized arguments: --remaining-ok\n",
+    "error": "Retrieving folder contents\nRetrieving folder contents completed\nBuilding directory structure\nBuilding directory structure completed\nFailed to retrieve file url:\n\n\tCannot retrieve the public link of the file. You may need to change\n\tthe permission to 'Anyone with the link', or have had many accesses.\n\tCheck FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=1SgcLVkiqIAgCVgYIDjbP9FcvpPsYKeZP\n\nbut Gdown can't. Please check connections and permissions.\n",
     "folder": "https://drive.google.com/drive/folders/11Efq_IfM4i-Lt7JcxaDUENMIizHOfl7y"
   }
 }
