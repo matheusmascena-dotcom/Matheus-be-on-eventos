@@ -1,36 +1,11 @@
 {
   "source": "Eventos - Be On _ 2026(1)(1).xlsx — Página2",
-  "version": 2,
+  "version": 3,
   "events": {
-    "music-on-sao-paulo": {
-      "sheet_event": "Music On",
-      "folder": "https://drive.google.com/drive/u/0/folders/10TbYEtu-fCFfb0PfqFDN5AH4AE87nFIm",
-      "credit": null,
-      "count": 4
-    },
-    "one-life-sao-paulo": {
-      "sheet_event": "One Life",
-      "folder": "https://drive.google.com/drive/folders/1x6Lub-LVEhI3UoqQRwvuky4_HNhiPpuR",
-      "credit": null,
-      "count": 4
-    },
-    "the-grid-outworld": {
-      "sheet_event": "The Grid: Outworld by Klang",
-      "folder": "https://drive.google.com/drive/u/0/folders/1-W1ZjLEVmvP-bqXiyE5Oj4VmZwj5edxd",
-      "credit": null,
-      "count": 4
-    },
-    "adriatique-x-sao-paulo": {
-      "sheet_event": "X São Paulo",
-      "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-",
-      "credit": "Tim Buiting",
-      "count": 4
-    },
-    "crochestra-brasil": {
-      "sheet_event": "Crochestra Brasil",
-      "folder": "https://drive.google.com/drive/folders/11Efq_IfM4i-Lt7JcxaDUENMIizHOfl7y",
-      "credit": null,
-      "count": 4
-    }
+    "music-on-sao-paulo": {"sheet_event":"Music On","folder":"https://drive.google.com/drive/u/0/folders/10TbYEtu-fCFfb0PfqFDN5AH4AE87nFIm","credit":null,"count":4},
+    "one-life-sao-paulo": {"sheet_event":"One Life","folder":"https://drive.google.com/drive/folders/1x6Lub-LVEhI3UoqQRwvuky4_HNhiPpuR","credit":null,"count":4},
+    "the-grid-outworld": {"sheet_event":"The Grid: Outworld by Klang","folder":"https://drive.google.com/drive/u/0/folders/1-W1ZjLEVmvP-bqXiyE5Oj4VmZwj5edxd","credit":null,"count":4},
+    "adriatique-x-sao-paulo": {"sheet_event":"X São Paulo","folder":"https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-","credit":"Tim Buiting","count":4},
+    "crochestra-brasil": {"sheet_event":"Crochestra Brasil","folder":"https://drive.google.com/drive/folders/11Efq_IfM4i-Lt7JcxaDUENMIizHOfl7y","credit":null,"count":4}
   }
 }
