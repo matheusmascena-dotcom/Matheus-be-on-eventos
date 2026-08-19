@@ -1,0 +1,1 @@
+Backup note: the previous main version is preserved in branch backup-before-profile-layout-fixes-2026-08-18. Do not delete that branch.
