@@ -1,0 +1,27 @@
+{
+  "event": "X São Paulo",
+  "photos": [
+    {
+      "src": "assets/galleries/adriatique-x-sao-paulo/01.jpg",
+      "name": "TB_Adriatique_X_SP_HighRes-11",
+      "credit": "Tim Buiting"
+    },
+    {
+      "src": "assets/galleries/adriatique-x-sao-paulo/02.jpg",
+      "name": "TB_Adriatique_X_SP_HighRes-22",
+      "credit": "Tim Buiting"
+    },
+    {
+      "src": "assets/galleries/adriatique-x-sao-paulo/03.jpg",
+      "name": "TB_Adriatique_X_SP_HighRes-12",
+      "credit": "Tim Buiting"
+    },
+    {
+      "src": "assets/galleries/adriatique-x-sao-paulo/04.jpg",
+      "name": "TB_Adriatique_X_SP_HighRes-20",
+      "credit": "Tim Buiting"
+    }
+  ],
+  "credit": "Tim Buiting",
+  "warning": "Alguns arquivos da pasta não estavam publicamente acessíveis e foram ignorados."
+}

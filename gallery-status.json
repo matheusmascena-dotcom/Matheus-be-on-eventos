@@ -15,15 +15,17 @@
   },
   "the-grid-outworld": {
     "ok": true,
-    "available": 27,
+    "available": 30,
     "selected": 4,
     "credit": null,
-    "warning": "Alguns arquivos da pasta não estavam publicamente acessíveis e foram ignorados."
+    "warning": null
   },
   "adriatique-x-sao-paulo": {
-    "ok": false,
-    "error": "Apenas 1 imagem(ns) puderam ser baixadas; são necessárias pelo menos 4. Verifique se os arquivos da pasta estão como “Qualquer pessoa com o link”.\nCfIwhJVatwU6wYUSle8R3gp TB_Adriatique_X_SP_HighRes1978.jpg\nProcessing file 1o1cLkJ-T9lEsLtmqSnoKgfM2Y5ZE1umH TB_Adriatique_X_SP_HighRes2246.jpg\nProcessing file 1Hx15hsfL3KLVKyDvtAlhutLUIRm_5sSZ TB_Adriatique_X_SP_HighRes2283.jpg\nProcessing file 1FISm_5QSR-_j6L_Npp9Bul0vt5wNUV2z TB_Adriatique_X_SP_HighRes2302.jpg\nProcessing file 1Uv1x2VooCd8SQ5IIEjI_XUeitfjz6pZl TB_Adriatique_X_SP_HighRes2368.jpg\nProcessing file 1e8-gktvDV9vZN3JX6pTmhfj2MsKuXO0W TB_Adriatique_X_SP_HighRes2385.jpg\nProcessing file 1csK0IIKgH8phmiSvl9ktfKH-Fw9RQ2Ob TB_Adriatique_X_SP_HighRes2399.jpg\nProcessing file 1aERwaaKixVIbo8RyUMmAYJONckg2lxp6 TB_Adriatique_X_SP_HighRes2415.jpg\nProcessing file 1LpmFFyyMcsSb2MCfWU4RgNFIkIZkKd5B TB_Adriatique_X_SP_HighRes2509.jpg\nProcessing file 1fFxFA2Lw2HiFeCVK8UMNoSlHt8XVQMfl TB_Adriatique_X_SP_HighRes2675.jpg\nProcessing file 1o4JXDpyeHbeUPDQeeBbwqcGYM8uhShHp TB_Adriatique_X_SP_HighRes2810.jpg\nProcessing file 1B_QiNjqmeZr65sGvdTBQrhmXfGdR6sz1 TB_Adriatique_X_SP_HighRes2836.jpg\nProcessing file 1VR136wKmXWGG_YST9GA2Te9iY88wX-ER TB_Adriatique_X_SP_HighRes2917.jpg\nProcessing file 1dVTlL_DItnntv6-VkfEUiCKFepez2289 TB_Adriatique_X_SP_HighRes3031.jpg\n\nRetrieving folder contents\nRetrieving folder contents completed\nBuilding directory structure\nBuilding directory structure completed\nDownloading...\nFrom: https://drive.google.com/uc?id=1xtpRxqTrwo8DvfBW846gY_befxXH0Rtb\nTo: /tmp/beon-gallery/adriatique-x-sao-paulo/TB_Adriatique_X_SP_HighRes-11.jpg\n\n  0%|          | 0.00/22.4M [00:00<?, ?B/s]\n  5%|▍         | 1.05M/22.4M [00:00<00:02, 8.96MB/s]\n 21%|██        | 4.72M/22.4M [00:00<00:00, 23.9MB/s]\n 33%|███▎      | 7.34M/22.4M [00:00<00:00, 15.2MB/s]\n 58%|█████▊    | 13.1M/22.4M [00:00<00:00, 20.3MB/s]\n100%|██████████| 22.4M/22.4M [00:00<00:00, 29.8MB/s]\nFailed to retrieve file url:\n\n\tCannot retrieve the public link of the file. You may need to change\n\tthe permission to 'Anyone with the link', or have had many accesses.\n\tCheck FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=13lSocVfgzMZZt_QwTPIkx9ZbL6IChYgF\n\nbut Gdown can't. Please check connections and permissions.\n",
-    "folder": "https://drive.google.com/drive/folders/1cjs_JH_lGBLNlB-1KhRkL4kRzp0x3cK-"
+    "ok": true,
+    "available": 11,
+    "selected": 4,
+    "credit": "Tim Buiting",
+    "warning": "Alguns arquivos da pasta não estavam publicamente acessíveis e foram ignorados."
   },
   "crochestra-brasil": {
     "ok": false,
