@@ -1,0 +1,1 @@
+Backup checkpoint before visual refinement requested on 2026-08-18. Existing Git history/branches should be used to restore the prior version if necessary.
