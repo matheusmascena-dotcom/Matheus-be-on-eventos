@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply layout and profile fixes
+      - name: Apply requested visual corrections
         shell: python
         run: |
           from pathlib import Path
@@ -27,58 +27,65 @@ jobs:
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
 
-          # Move the ambassador badge immediately above the Line-ups label.
-          amb_re = re.compile(r'<div class="amb">.*?</div>', re.S)
+          # 1) Put BE·ON AMBASSADOR immediately before the hero block,
+          #    which puts it directly above the “Line-ups selecionados” label.
+          amb_re = re.compile(r'<section class="amb-wrap w">.*?</section>', re.S)
           m = amb_re.search(html)
           if m:
               amb = m.group(0)
               html = html[:m.start()] + html[m.end():]
-              marker = '<div class="ey" data-t="ey">'
-              if marker in html and 'class="amb"' not in html:
-                  html = html.replace(marker, amb + marker, 1)
+              hero_marker = '<section class="hero w">'
+              if hero_marker in html:
+                  html = html.replace(hero_marker, amb + hero_marker, 1)
 
-          # Use the current Instagram profile picture through an avatar proxy.
-          profile_img = 'https://unavatar.io/instagram/mat_mascena97'
-          html, n = re.subn(
-              r'(<div class="profile"[^>]*>.*?<img\s+src=")[^"]+("[^>]*>)',
-              lambda m: m.group(1) + profile_img + m.group(2),
-              html, count=1, flags=re.S,
-          )
-          if n == 0:
-              print('Profile image pattern not found; existing image preserved.')
+          # 2) Use the exact profile photo supplied by Matheus, stored in the repo.
+          html = html.replace('https://unavatar.io/instagram/mat_mascena97', 'assets/profile-matheus.svg')
+          html = html.replace('src="profile-photo.svg"', 'src="assets/profile-matheus.svg"')
 
-          fixes = '''<style id="final-layout-fixes">
-          .hero .amb{margin-bottom:0}
-          .hero .ey{margin-top:10px}
-          .next .ni .count{margin-bottom:16px}
-          .next .ni>.buy{display:block;margin-top:4px}
-          .cards{align-items:stretch}
-          .cards .card{height:100%;min-height:100%}
-          .cards .pic{height:220px;aspect-ratio:auto;flex:none;overflow:hidden}
-          .cards .pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;image-rendering:auto}
-          .cards .body{flex:1;display:flex;flex-direction:column}
-          .cards .acts{margin-top:auto;padding-top:12px}
-          .profile{grid-template-columns:170px minmax(0,1fr);align-items:center;gap:30px;padding:28px}
-          .profile img{width:170px;height:170px;display:block;object-fit:cover}
+          # 3) Add a dedicated, highly visible coupon badge under the name.
+          if 'class="profile-code-badge"' not in html:
+              html = html.replace(
+                  '<h3>Matheus Alves Mascena — 29 anos.</h3>',
+                  '<h3>Matheus Alves Mascena — 29 anos.</h3><div class="profile-code-badge">CUPOM: <strong>MATHEUSMASCENA</strong> · 5% OFF</div>',
+                  1,
+              )
+
+          # 4) Override the previous visual rules without touching event content.
+          fixes = '''<style id="final-layout-fixes-v2">
+          .amb-wrap{padding:18px 0 8px;text-align:center}
+          .amb{display:inline-flex;flex-direction:column;padding:10px 22px;border:1px solid #3fe0d055;border-radius:16px;background:linear-gradient(135deg,#7c5cff18,#ff2f9210);box-shadow:0 0 24px #7c5cff15;text-transform:uppercase}
+          .amb small{font-size:8px;letter-spacing:.22em;color:var(--c)}
+          .amb strong{font:22px 'Bebas Neue';letter-spacing:.08em}
+          .profile{grid-template-columns:200px minmax(0,1fr);gap:34px;padding:30px;align-items:center}
+          .profile-photo{width:200px;height:200px;object-fit:contain;object-position:center;background:#0e0a17;border-radius:18px;border:2px solid #3fe0d077;display:block;padding:0}
           .profile>div:last-child{text-align:left;min-width:0}
-          .profile h3{margin:4px 0 8px}
-          .profile p{margin:0 0 15px;line-height:1.65}
-          .profile .links{gap:9px}
-          .profile .links a{display:inline-flex;align-items:center;gap:5px}
+          .profile h3{margin:4px 0 8px;color:var(--c);text-shadow:0 0 18px #3fe0d055}
+          .profile-code-badge{display:inline-block;margin:0 0 14px;padding:7px 11px;border:1px solid #ff2f9255;border-radius:9px;background:#ff2f9212;color:var(--m);font-size:10px;font-weight:700;letter-spacing:.04em}
+          .profile-code-badge strong{color:var(--m);font-weight:800}
+          .profile p{margin:0 0 18px;line-height:1.75}
+          .cards{align-items:stretch}
+          .cards .card{height:100%;min-height:460px;display:flex;flex-direction:column}
+          .cards .pic{height:220px;flex:none;overflow:hidden;background:#0e0a17;display:flex;align-items:center;justify-content:center}
+          .cards .pic img{width:100%;height:100%;object-fit:contain!important;object-position:center;display:block;transition:.4s;image-rendering:auto}
+          .cards .body{flex:1;display:flex;flex-direction:column}
+          .cards .acts{margin-top:auto;padding-top:14px}
+          .next .ni .count{margin-bottom:18px}
+          .next .ni>.buy{display:block;margin-top:6px}
           @media(max-width:760px){
-            .profile{grid-template-columns:1fr;gap:18px;padding:22px}
-            .profile img{width:150px;height:150px;margin:auto}
+            .amb-wrap{padding:14px 0 6px}
+            .profile{grid-template-columns:1fr;gap:18px;padding:22px;text-align:center}
+            .profile-photo{width:160px;height:160px;margin:auto}
             .profile>div:last-child{text-align:center}
-            .profile p{line-height:1.6}
+            .profile p{line-height:1.65}
             .profile .links{justify-content:center}
             .cards .pic{height:230px}
           }
           </style>'''
-          if 'id="final-layout-fixes"' not in html:
+          if 'id="final-layout-fixes-v2"' not in html:
               html = html.replace('</head>', fixes + '</head>', 1)
 
           p.write_text(html, encoding='utf-8')
-          print('Final visual fixes applied.')
+          print('Requested BeOn visual corrections applied.')
 
       - name: Commit changes
         run: |
@@ -89,5 +96,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Fix ambassador profile, event card sizing and featured CTA"
+          git commit -m "Apply ambassador photo and layout corrections"
           git push
