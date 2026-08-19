@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Install gallery downloader
         run: python -m pip install --upgrade gdown
-      - name: Download folders, randomly select photos and build gallery data
+      - name: Download folders, randomly select available photos and build gallery data
         shell: python
         run: |
           import json, random, shutil, subprocess
@@ -28,25 +28,35 @@ jobs:
           cfg=json.loads(Path('gallery-config.json').read_text(encoding='utf-8'))
           out=Path('assets/galleries'); out.mkdir(parents=True,exist_ok=True)
           status={}; exts={'.jpg','.jpeg','.png','.webp','.gif','.avif'}; rng=random.SystemRandom()
+          creditors=cfg.get('creditors',{})
           for slug,item in cfg['events'].items():
             tmp=Path('/tmp/beon-gallery')/slug; dest=out/slug
             if tmp.exists(): shutil.rmtree(tmp)
             if dest.exists(): shutil.rmtree(dest)
+            if not item.get('enabled',True):
+              status[slug]={'ok':True,'skipped':True,'available':0,'selected':0,'warning':'Galeria pausada até que haja fotos acessíveis.'}
+              continue
             tmp.mkdir(parents=True,exist_ok=True); dest.mkdir(parents=True,exist_ok=True)
             try:
               proc=subprocess.run(['gdown','--folder',item['folder'],'-O',str(tmp)],text=True,capture_output=True,timeout=360)
               log=(proc.stdout or '')+'\n'+(proc.stderr or '')
               files=[p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in exts]
-              need=int(item.get('count',4))
-              if len(files)<need:
-                raise RuntimeError(f'Apenas {len(files)} imagem(ns) puderam ser baixadas; são necessárias pelo menos {need}. Verifique se os arquivos da pasta estão como “Qualquer pessoa com o link”.\n{log[-2200:]}')
-              chosen=rng.sample(files,need); photos=[]
+              requested=int(item.get('count',4)); selected_count=min(len(files),requested)
+              if selected_count==0:
+                raise RuntimeError('Nenhuma imagem pôde ser baixada desta pasta. A galeria foi pulada.')
+              chosen=rng.sample(files,selected_count); photos=[]
+              credit_data=[]
+              for key in item.get('credits',[]):
+                if key in creditors:
+                  credit_data.append(creditors[key])
               for i,src in enumerate(chosen,1):
                 target=dest/f'{i:02d}{src.suffix.lower()}'; shutil.copy2(src,target)
-                photos.append({'src':f'assets/galleries/{slug}/{target.name}','name':src.stem,'credit':item.get('credit')})
-              warning=None if proc.returncode==0 else 'Alguns arquivos da pasta não estavam publicamente acessíveis e foram ignorados.'
-              status[slug]={'ok':True,'available':len(files),'selected':len(photos),'credit':item.get('credit'),'warning':warning}
-              (out/f'{slug}.json').write_text(json.dumps({'event':item['sheet_event'],'photos':photos,'credit':item.get('credit'),'warning':warning},ensure_ascii=False,indent=2),encoding='utf-8')
+                photos.append({'src':f'assets/galleries/{slug}/{target.name}','name':src.stem})
+              warning=None
+              if proc.returncode!=0 or selected_count<requested:
+                warning=f'Foram encontradas {len(files)} foto(s) acessíveis; {selected_count} foram selecionadas de {requested} solicitadas.'
+              status[slug]={'ok':True,'available':len(files),'selected':selected_count,'requested':requested,'credits':credit_data,'warning':warning}
+              (out/f'{slug}.json').write_text(json.dumps({'event':item['sheet_event'],'photos':photos,'credits':credit_data,'warning':warning},ensure_ascii=False,indent=2),encoding='utf-8')
             except Exception as e:
               status[slug]={'ok':False,'error':str(e),'folder':item['folder']}
               if dest.exists(): shutil.rmtree(dest)
@@ -62,10 +72,10 @@ jobs:
           if 'id="beon-gallery-grid"' not in html:
             html=html.replace('<iframe id="frame" loading="lazy"></iframe>','<div id="beon-gallery-grid" class="beon-gallery-grid"></div><div id="beon-gallery-credit" class="beon-gallery-credit"></div><iframe id="frame" loading="lazy" style="display:none"></iframe>',1)
           if 'id="beon-gallery-styles"' not in html:
-            css='''<style id="beon-gallery-styles">.beon-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}.beon-gallery-item{position:relative;aspect-ratio:4/3;overflow:hidden;border:1px solid #ffffff14;border-radius:12px;background:#090711;cursor:pointer}.beon-gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}.beon-gallery-item:hover img{transform:scale(1.035)}.beon-gallery-item:after{content:'↗';position:absolute;right:8px;bottom:8px;padding:5px 7px;border-radius:99px;background:#08060dcc;color:var(--c);font-size:10px}.beon-gallery-credit{margin-top:11px;color:var(--u);font-size:9px;text-align:right}.beon-gallery-credit strong{color:var(--c)}@media(max-width:760px){.beon-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}@media(max-width:420px){.beon-gallery-grid{grid-template-columns:1fr}}</style>'''
+            css='''<style id="beon-gallery-styles">.beon-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}.beon-gallery-item{position:relative;aspect-ratio:4/3;overflow:hidden;border:1px solid #ffffff14;border-radius:12px;background:#090711;cursor:pointer}.beon-gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}.beon-gallery-item:hover img{transform:scale(1.035)}.beon-gallery-item:after{content:'↗';position:absolute;right:8px;bottom:8px;padding:5px 7px;border-radius:99px;background:#08060dcc;color:var(--c);font-size:10px}.beon-gallery-credit{margin-top:11px;color:var(--u);font-size:9px;text-align:right;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.beon-gallery-credit a{color:var(--c);text-decoration:none;font-weight:700}.beon-gallery-credit a:hover{text-decoration:underline}@media(max-width:760px){.beon-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}@media(max-width:420px){.beon-gallery-grid{grid-template-columns:1fr}}</style>'''
             html=html.replace('</head>',css+'</head>',1)
           if 'function loadBeonGallery' not in html:
-            js='''async function loadBeonGallery(){const grid=document.getElementById('beon-gallery-grid');const credit=document.getElementById('beon-gallery-credit');if(!grid)return;try{const r=await fetch('assets/galleries/'+ev[0]+'.json',{cache:'no-store'});if(!r.ok)throw new Error('gallery unavailable');const g=await r.json();grid.innerHTML='';(g.photos||[]).forEach(p=>{const a=document.createElement('a');a.className='beon-gallery-item';a.href=p.src;a.target='_blank';a.rel='noopener';const img=document.createElement('img');img.src=p.src;img.alt=p.name||ev[1];img.loading='lazy';a.appendChild(img);grid.appendChild(a)});if(g.credit){credit.innerHTML='📷 Fotos por <strong>'+g.credit+'</strong>';}else{credit.textContent='';}}catch(e){grid.innerHTML='<div style="grid-column:1/-1;padding:18px;border:1px dashed #ffffff18;border-radius:12px;color:var(--u);font-size:10px;text-align:center">As fotos desta galeria estão sendo preparadas.</div>';credit.textContent='';}}loadBeonGallery();'''
+            js='''async function loadBeonGallery(){const grid=document.getElementById('beon-gallery-grid');const credit=document.getElementById('beon-gallery-credit');if(!grid)return;try{const r=await fetch('assets/galleries/'+ev[0]+'.json',{cache:'no-store'});if(!r.ok)throw new Error('gallery unavailable');const g=await r.json();grid.innerHTML='';(g.photos||[]).forEach(p=>{const a=document.createElement('a');a.className='beon-gallery-item';a.href=p.src;a.target='_blank';a.rel='noopener';const img=document.createElement('img');img.src=p.src;img.alt=p.name||ev[1];img.loading='lazy';a.appendChild(img);grid.appendChild(a)});credit.innerHTML='';(g.credits||[]).forEach(c=>{const wrap=document.createElement('span');const label=document.createTextNode((c.icon||'📷')+' ');if(c.instagram){const a=document.createElement('a');a.href=c.instagram;a.target='_blank';a.rel='noopener';a.textContent=c.label;wrap.appendChild(label);wrap.appendChild(a);}else{wrap.appendChild(label);const strong=document.createElement('strong');strong.textContent=c.label;wrap.appendChild(strong);}credit.appendChild(wrap);});if(g.warning){const w=document.createElement('span');w.textContent='· '+g.warning;credit.appendChild(w);}}catch(e){grid.innerHTML='<div style="grid-column:1/-1;padding:18px;border:1px dashed #ffffff18;border-radius:12px;color:var(--u);font-size:10px;text-align:center">As fotos desta galeria estão sendo preparadas.</div>';credit.textContent='';}}loadBeonGallery();'''
             html=html.replace("const T={'pt-BR':",js+"const T={'pt-BR':",1)
           p.write_text(html,encoding='utf-8')
       - name: Commit generated galleries
@@ -75,5 +85,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add event.html assets/galleries gallery-status.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Build event photo galleries"
+          git commit -m "Expand event galleries and add BeOn Instagram credits"
           git push
