@@ -16,10 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sync:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-master-sync]') }}
+  sync-profile:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-sync]') }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,194 +31,70 @@ jobs:
           python-version: '3.11'
 
       - name: Dependências
-        run: python -m pip install --upgrade pip && python -m pip install openpyxl pillow gdown
+        run: python -m pip install --upgrade pip openpyxl
 
-      - name: Sincronizar planilha, perfil e galerias
-        env:
-          BOOK: 'data/Eventos - Be On _ 2026(5)_V3_Final.xlsx'
-          MAX_PHOTOS: '20'
-        shell: bash
+      - name: Ler foto da planilha e atualizar somente a apresentação
+        shell: python
         run: |
-          python <<'PY'
-          import json, os, re, shutil, subprocess
+          import json, re
           from pathlib import Path
           from openpyxl import load_workbook
-          from PIL import Image
 
-          root = Path(".")
-          book = Path(os.environ["BOOK"])
+          root = Path('.')
+          book = root / 'data' / 'Eventos - Be On _ 2026(5)_V3_Final.xlsx'
           wb = load_workbook(book, data_only=True)
+          ws = wb['Configurações do Site']
 
-          # ---------- CONFIGURAÇÕES DO SITE ----------
-          cfg_ws = wb["Configurações do Site"]
           cfg = {}
-          for row in cfg_ws.iter_rows(min_row=2, values_only=True):
+          for row in ws.iter_rows(min_row=2, values_only=True):
               if row and row[0]:
                   cfg[str(row[0]).strip()] = row[1]
 
-          def drive_id(value):
-              if not value:
-                  return ""
-              s = str(value).strip()
-              m = re.search(r"/file/d/([\w-]+)", s) or re.search(r"[?&]id=([\w-]+)", s)
-              return m.group(1) if m else ""
+          source = str(cfg.get('Foto Perfil') or '').strip()
+          match = re.search(r'/file/d/([A-Za-z0-9_-]+)', source) or re.search(r'[?&]id=([A-Za-z0-9_-]+)', source)
+          if not match:
+              raise RuntimeError('Não encontrei um ID válido no campo Foto Perfil da aba Configurações do Site.')
 
-          profile_id = drive_id(cfg.get("Foto Perfil"))
-          if not profile_id:
-              raise RuntimeError("Configurações do Site: 'Foto Perfil' sem ID válido.")
+          file_id = match.group(1)
+          # O navegador carrega a própria foto do Drive; não há download, SVG ou Instagram envolvidos.
+          image_url = f'https://drive.google.com/thumbnail?id={file_id}&sz=w1200'
 
-          # A foto é carregada diretamente do Drive; nenhum SVG/backup/Instagram é consultado.
-          profile_url = f"https://drive.google.com/thumbnail?id={profile_id}&sz=w1200"
-          site = {
-              "profile": profile_url,
-              "profile_drive_id": profile_id,
-              "instagram": str(cfg.get("Instagram") or ""),
-              "whatsapp": str(cfg.get("WhatsApp") or ""),
-              "coupon": str(cfg.get("Cupom") or ""),
-              "discount": str(cfg.get("Desconto") or ""),
-              "name": str(cfg.get("Nome Embaixador") or ""),
-              "role": str(cfg.get("Cargo") or "")
+          site_config = {
+              'profile_source': source,
+              'profile_image_url': image_url,
+              'profile_drive_id': file_id
           }
-          (root / "site-config.json").write_text(json.dumps(site, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          (root / 'site-config.json').write_text(json.dumps(site_config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          # O mesmo arquivo é mantido como ponte para a apresentação atual.
-          profile_svg = root / "assets" / "profile-matheus-uploaded.svg"
-          profile_svg.parent.mkdir(parents=True, exist_ok=True)
-          profile_svg.write_text(
-              f'<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960"><rect width="100%" height="100%" fill="#0d0914"/><image href="{profile_url}" width="720" height="960" preserveAspectRatio="xMidYMid slice"/></svg>',
-              encoding="utf-8"
-          )
+          # Alteração cirúrgica: somente <img> cujo alt seja a apresentação do Matheus.
+          p = root / 'index.html'
+          html = p.read_text(encoding='utf-8')
+          pattern = re.compile(r'(<img\b(?=[^>]*\balt=["\']Matheus Alves Mascena["\'])[^>]*\bsrc=["\'])[^"\']*(["\'])', re.I | re.S)
+          html2, count = pattern.subn(r'\g<1>' + image_url + r'\g<2>', html)
+          if count == 0:
+              # Fallback para as referências antigas conhecidas, sem tocar em cards ou galerias.
+              old = re.compile(r'assets/(?:profile-matheus-uploaded|profile-photo|profile-matheus|matheus-profile)[^"\']*\.(?:svg|png|jpe?g)(?:\?[^"\']*)?', re.I)
+              html2, count = old.subn(image_url, html)
 
-          old_profile = re.compile(
-              r"(?:https?://drive\.google\.com/thumbnail\?id=[^\"']+|assets/(?:profile-photo|profile-matheus(?:-uploaded|-exact-current)?|matheus-profile)[^\"']*\.(?:svg|png|jpg|jpeg)(?:\?[^\"']*)?)"
-          )
-          for name in ("index.html", "event.html"):
-              path = root / name
-              if not path.exists():
-                  continue
-              text = path.read_text(encoding="utf-8")
-              if name == "index.html":
-                  text = old_profile.sub(profile_url, text)
-              if site["instagram"]:
-                  text = re.sub(r"https://www\.instagram\.com/[^\"']*", site["instagram"], text)
-              if site["whatsapp"]:
-                  text = re.sub(r"https://w\.app/[^\"']*|https://wa\.me/[^\"']*", site["whatsapp"], text)
-              if site["coupon"]:
-                  text = re.sub(r"MATHEUSMASCENA", site["coupon"], text)
-              path.write_text(text, encoding="utf-8")
+          if count == 0:
+              raise RuntimeError('Nenhuma referência da foto de apresentação foi encontrada no index.html.')
 
-          # ---------- GALERIAS DA PÁGINA 2 ----------
-          page2 = wb["Página2"]
-          slug_map = {
-              "music on": "music-on-sao-paulo",
-              "one life": "one-life-sao-paulo",
-              "the grid: outworld by klang": "the-grid-outworld",
-              "adriatique - x são paulo": "adriatique-x-sao-paulo",
-              "crochestra brasil": "crochestra-brasil",
-          }
-          labels = {
-              "music-on-sao-paulo": "Music On",
-              "one-life-sao-paulo": "One Life",
-              "the-grid-outworld": "The Grid",
-              "adriatique-x-sao-paulo": "Adriatique",
-              "crochestra-brasil": "Crochestra",
-          }
-          credits = {
-              "music-on-sao-paulo": [
-                  {"label": "BeOn Entertainment", "instagram": "https://www.instagram.com/beonentertainment/", "icon": "📷"},
-                  {"label": "@clickdoclayton", "instagram": "https://www.instagram.com/clickdoclayton/", "icon": "📷"},
-              ],
-              "one-life-sao-paulo": [
-                  {"label": "BeOn Entertainment", "instagram": "https://www.instagram.com/beonentertainment/", "icon": "📷"},
-              ],
-              "the-grid-outworld": [
-                  {"label": "BeOn Entertainment", "instagram": "https://www.instagram.com/beonentertainment/", "icon": "📷"},
-                  {"label": "@pedrofatore_", "instagram": "https://www.instagram.com/pedrofatore_/", "icon": "📷"},
-              ],
-              "adriatique-x-sao-paulo": [
-                  {"label": "BeOn Entertainment", "instagram": "https://www.instagram.com/beonentertainment/", "icon": "📷"},
-                  {"label": "@pedrofatore_", "instagram": "https://www.instagram.com/pedrofatore_/", "icon": "📷"},
-              ],
-              "crochestra-brasil": [],
-          }
+          p.write_text(html2, encoding='utf-8')
+          print(f'Foto de perfil sincronizada a partir da planilha: {image_url} | referências atualizadas: {count}')
 
-          out = root / "assets" / "galleries"
-          out.mkdir(parents=True, exist_ok=True)
-          max_photos = int(os.environ.get("MAX_PHOTOS", "20"))
-          results = {}
-
-          for row in page2.iter_rows(min_row=2, values_only=True):
-              if not row or not row[0] or not row[1]:
-                  continue
-              event_name = str(row[0]).strip().lower()
-              folder = str(row[1]).strip()
-              slug = slug_map.get(event_name)
-              if not slug:
-                  continue
-              tmp = Path("/tmp/beon-drive") / slug
-              stage = Path("/tmp/beon-stage") / slug
-              try:
-                  if tmp.exists():
-                      shutil.rmtree(tmp)
-                  if stage.exists():
-                      shutil.rmtree(stage)
-                  tmp.mkdir(parents=True, exist_ok=True)
-                  stage.mkdir(parents=True, exist_ok=True)
-                  proc = subprocess.run(["gdown", "--folder", folder, "--output", str(tmp)], text=True, capture_output=True, timeout=360)
-                  files = []
-                  if proc.returncode == 0:
-                      files = sorted([p for p in tmp.rglob("*") if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".avif"}], key=lambda p: p.name.lower())
-                  processed = 0
-                  for source in files[:max_photos]:
-                      try:
-                          Image.open(source).convert("RGB").save(stage / f"{processed + 1:02d}.jpg", "JPEG", quality=94, optimize=True, progressive=True)
-                          processed += 1
-                      except Exception:
-                          pass
-                  if processed:
-                      dest = out / slug
-                      if dest.exists():
-                          shutil.rmtree(dest)
-                      stage.rename(dest)
-                      payload = {
-                          "event": labels[slug],
-                          "photos": [{"src": f"assets/galleries/{slug}/{i:02d}.jpg", "name": f"{i:02d}"} for i in range(1, processed + 1)],
-                          "credits": credits.get(slug, []),
-                          "sourceFolder": folder,
-                          "warning": None,
-                          "importedCount": processed,
-                          "thumbnailLimit": 8
-                      }
-                      (out / f"{slug}.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-                  results[slug] = {"status": "OK" if processed else "PRESERVED", "files": len(files), "processed": processed, "gdown_exit": proc.returncode}
-              except Exception as exc:
-                  results[slug] = {"status": "PRESERVED", "files": 0, "processed": 0, "gdown_exit": "ERROR", "error": str(exc)}
-
-          report = ["# BeOn Master Sync Report", "", f"- Foto do perfil: `{profile_url}`", f"- ID do Drive: `{profile_id}`", "", "| Evento | Status | Arquivos | Processadas |", "|---|---|---:|---:|"]
-          for slug, result in results.items():
-              report.append(f"| {labels[slug]} | {result['status']} | {result['files']} | {result['processed']} |")
-          (root / "beon-sync-report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
-
-          summary = ["## BeOn Master Sync", f"- Foto de perfil: [Drive](https://drive.google.com/file/d/{profile_id}/view)", "- Foto configurada diretamente a partir da planilha."]
-          for slug, result in results.items():
-              summary.append(f"- **{labels[slug]}**: `{result['status']}` — {result['processed']} fotos novas.")
-          Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text("\n".join(summary) + "\n", encoding="utf-8")
-          PY
-
-      - name: Validar publicação
+      - name: Validar somente a mudança de perfil
         run: |
           test -s site-config.json
-          test -s beon-sync-report.md
-          test -f index.html
-          grep -F "drive.google.com/thumbnail?id=" index.html || grep -F "assets/profile-matheus-uploaded.svg" index.html
-          grep -F "mat_mascena97" index.html
-          grep -F "w.app/matheusalves-fale-comigo" index.html
+          grep -F 'drive.google.com/thumbnail?id=' index.html
+          grep -F 'profile_source' site-config.json
+          test -f assets/galleries/adriatique-x-sao-paulo.json
+          test -f assets/galleries/crochestra-brasil.json || true
 
-      - name: Publicar uma única vez
+      - name: Publicar
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html event.html assets/galleries assets/profile-matheus-uploaded.svg site-config.json beon-sync-report.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html site-config.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "sync: BeOn planilha Drive e site em conjunto [beon-master-sync]"
+          git commit -m 'sync: foto de perfil pela planilha [beon-profile-sync]'
           git push
