@@ -1,0 +1,1 @@
+Use the user-uploaded profile photo from the current conversation as the source image. This placeholder is intentionally kept until the binary image can be committed through a binary-capable upload path.
