@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sync-profile:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-sync]') }}
+  remove-profile-image:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-removal]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,73 +25,49 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Dependências
-        run: python -m pip install --upgrade pip openpyxl
-
-      - name: Ler Foto Perfil da planilha e atualizar somente a apresentação
+      - name: Remover somente as fotos da apresentação
         shell: python
         run: |
-          import json, re
+          import re
           from pathlib import Path
-          from openpyxl import load_workbook
 
-          root = Path('.')
-          book = root / 'data' / 'Eventos - Be On _ 2026(5)_V3_Final.xlsx'
-          wb = load_workbook(book, data_only=True)
-          ws = wb['Configurações do Site']
+          css = '''\n<style id="beon-no-profile-photo">\n.amb-photo,.ambassador-bottom-photo{display:none!important}\n.hero-inner{grid-template-columns:1fr!important}\n.ambassador-bottom-card{grid-template-columns:1fr!important}\n</style>\n'''
 
-          cfg = {}
-          for row in ws.iter_rows(min_row=2, values_only=True):
-              if row and row[0]:
-                  cfg[str(row[0]).strip()] = row[1]
+          for filename in ("index.html", "event.html"):
+              p = Path(filename)
+              if not p.exists():
+                  continue
+              html = p.read_text(encoding="utf-8")
 
-          source = str(cfg.get('Foto Perfil') or '').strip()
-          match = re.search(r'/file/d/([A-Za-z0-9_-]+)', source) or re.search(r'[?&]id=([A-Za-z0-9_-]+)', source)
-          if not match:
-              raise RuntimeError('Não encontrei um ID válido no campo Foto Perfil da aba Configurações do Site.')
+              # Remove the known profile-photo containers entirely.
+              html = re.sub(r'<div\s+class=["\']amb-photo["\'][^>]*>.*?</div>', '', html, flags=re.I|re.S)
+              html = re.sub(r'<div\s+class=["\']ambassador-bottom-photo["\'][^>]*>.*?</div>', '', html, flags=re.I|re.S)
 
-          file_id = match.group(1)
-          image_url = f'https://drive.google.com/thumbnail?id={file_id}&sz=w1200'
+              # Remove any remaining profile image element, regardless of its old source.
+              html = re.sub(r'<img\b(?=[^>]*(?:profile-matheus|profile-photo|matheus-profile|drive\.google\.com/thumbnail))[^>]*>', '', html, flags=re.I|re.S)
 
-          (root / 'site-config.json').write_text(json.dumps({
-              'profile_source': source,
-              'profile_image_url': image_url,
-              'profile_drive_id': file_id
-          }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+              # Keep the layout single-column so no empty photo column remains.
+              html = re.sub(r'<style\s+id=["\']beon-no-profile-photo["\']>.*?</style>', '', html, flags=re.I|re.S)
+              html = html.replace('</head>', css + '</head>', 1)
+              p.write_text(html, encoding='utf-8')
 
-          p = root / 'index.html'
-          html = p.read_text(encoding='utf-8')
+          # Remove the old profile image asset so it cannot be used again.
+          old_asset = Path('assets/profile-matheus-uploaded.svg')
+          if old_asset.exists():
+              old_asset.unlink()
 
-          # Altera somente as imagens da apresentação com alt do Matheus.
-          pattern = re.compile(r'(<img\b(?=[^>]*\balt=["\']Matheus Alves Mascena["\'])[^>]*\bsrc=["\'])[^"\']*(["\'])', re.I | re.S)
-          html2, count = pattern.subn(lambda m: m.group(1) + image_url + m.group(2), html)
-
-          if count == 0:
-              # Referências antigas conhecidas: substituição cirúrgica, sem tocar nas galerias/cards.
-              old = re.compile(r'assets/(?:profile-matheus-uploaded|profile-photo|profile-matheus|matheus-profile)[^"\']*\.(?:svg|png|jpe?g)(?:\?[^"\']*)?', re.I)
-              html2, count = old.subn(image_url, html)
-
-          if count == 0:
-              raise RuntimeError('Nenhuma referência da foto de apresentação foi encontrada no index.html.')
-
-          p.write_text(html2, encoding='utf-8')
-          print(f'Foto de perfil sincronizada: {image_url} | referências: {count}')
-
-      - name: Validar somente a apresentação
+      - name: Validar que não existe mais foto de apresentação
+        shell: bash
         run: |
-          test -s site-config.json
-          grep -F 'drive.google.com/thumbnail?id=' index.html
+          ! grep -RniE 'profile-matheus|profile-photo|matheus-profile|drive.google.com/thumbnail' index.html event.html || true
+          test ! -e assets/profile-matheus-uploaded.svg
 
-      - name: Publicar
+      - name: Publicar uma única vez
+        shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html site-config.json
+          git add index.html event.html assets/profile-matheus-uploaded.svg
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'sync: foto de perfil pela planilha [beon-profile-sync]'
+          git commit -m 'fix: remover fotos da apresentação [beon-profile-removal]'
           git push
