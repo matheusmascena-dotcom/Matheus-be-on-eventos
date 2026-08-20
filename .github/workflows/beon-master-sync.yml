@@ -1,0 +1,236 @@
+name: BeOn Master Sync
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'data/Eventos - Be On _ 2026(5)_V3_Final.xlsx'
+      - '.github/workflows/beon-master-sync.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: beon-master-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-master-sync]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Dependências
+        run: python -m pip install --upgrade pip && python -m pip install openpyxl pillow gdown
+
+      - name: Sincronizar planilha, foto de perfil e galerias do Drive
+        env:
+          BOOK: 'data/Eventos - Be On _ 2026(5)_V3_Final.xlsx'
+          MAX_PHOTOS: '20'
+        shell: python
+        run: |
+          import json, os, re, shutil, subprocess, pathlib, unicodedata
+          from pathlib import Path
+          from openpyxl import load_workbook
+          from PIL import Image
+
+          root = Path('.')
+          book = Path(os.environ['BOOK'])
+          wb = load_workbook(book, data_only=True)
+
+          # ---------- Site config: única fonte ----------
+          cfg_ws = wb['Configurações do Site']
+          cfg = {}
+          for row in cfg_ws.iter_rows(min_row=2, values_only=True):
+              if row and row[0]:
+                  cfg[str(row[0]).strip()] = row[1]
+
+          def drive_id(value):
+              if not value: return ''
+              s = str(value)
+              m = re.search(r'/file/d/([\w-]+)', s) or re.search(r'[?&]id=([\w-]+)', s)
+              return m.group(1) if m else s
+
+          profile_url = str(cfg.get('Foto Perfil') or '')
+          profile_id = drive_id(profile_url)
+          profile_path = root/'assets'/'profile-matheus.jpg'
+          profile_path.parent.mkdir(parents=True, exist_ok=True)
+          profile_ok = False
+
+          if profile_id:
+              tmp_profile = Path('/tmp/beon-profile')
+              if tmp_profile.exists(): shutil.rmtree(tmp_profile)
+              tmp_profile.mkdir(parents=True)
+              raw = tmp_profile/'source'
+              attempts = [
+                  ['gdown', '--fuzzy', profile_url, '-O', str(raw)],
+                  ['curl', '-L', '--fail', '--retry', '3', '-o', str(raw), f'https://drive.usercontent.google.com/download?id={profile_id}&export=download&confirm=t']
+              ]
+              for cmd in attempts:
+                  try:
+                      if raw.exists(): raw.unlink()
+                      p = subprocess.run(cmd, text=True, capture_output=True, timeout=120)
+                      if p.returncode != 0 or not raw.exists() or raw.stat().st_size < 1000:
+                          continue
+                      try:
+                          im = Image.open(raw).convert('RGB')
+                          im.thumbnail((720,960), Image.Resampling.LANCZOS)
+                          im.save(profile_path, 'JPEG', quality=92, optimize=True, progressive=True)
+                          profile_ok = True
+                          break
+                      except Exception:
+                          continue
+                  except Exception:
+                      continue
+
+          if not profile_ok:
+              print('AVISO: não foi possível baixar a foto de perfil; mantendo a foto anterior sem quebrar a sincronização.')
+
+          instagram = str(cfg.get('Instagram') or '')
+          whatsapp = str(cfg.get('WhatsApp') or '')
+          coupon = str(cfg.get('Cupom') or '')
+          discount = str(cfg.get('Desconto') or '')
+          name = str(cfg.get('Nome Embaixador') or '')
+          role = str(cfg.get('Cargo') or '')
+          site_config = {
+              'profile': 'assets/profile-matheus.jpg',
+              'instagram': instagram,
+              'whatsapp': whatsapp,
+              'coupon': coupon,
+              'discount': discount,
+              'name': name,
+              'role': role,
+              'profile_source': profile_url
+          }
+          (root/'site-config.json').write_text(json.dumps(site_config, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+
+          # Atualiza somente referências de perfil/contato/cupom; preserva o restante do site.
+          profile_re = re.compile(r'assets/(?:profile-photo|profile-matheus(?:-uploaded|-exact-current)?|matheus-profile)[^\"\']*\.(?:svg|png|jpg|jpeg)(?:\?[^\"\']*)?')
+          for html_name in ('index.html','event.html'):
+              p = root/html_name
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+              if profile_ok:
+                  s = profile_re.sub('assets/profile-matheus.jpg?v=sheet', s)
+              if instagram:
+                  s = re.sub(r'https://www\.instagram\.com/[^\"\']*', instagram, s)
+              if whatsapp:
+                  s = re.sub(r'https://w\.app/[^\"\']*|https://wa\.me/[^\"\']*', whatsapp, s)
+              if coupon:
+                  s = s.replace('MATHEUSMASCENA', coupon)
+              p.write_text(s, encoding='utf-8')
+
+          # ---------- Página2: galerias como fonte ----------
+          page2 = wb['Página2']
+          gallery_rows = list(page2.iter_rows(min_row=2, values_only=True))
+          slug_map = {
+              'music on':'music-on-sao-paulo',
+              'one life':'one-life-sao-paulo',
+              'the grid: outworld by klang':'the-grid-outworld',
+              'adriatique - x são paulo':'adriatique-x-sao-paulo',
+              'crochestra brasil':'crochestra-brasil'
+          }
+          labels = {
+              'music-on-sao-paulo':'Music On',
+              'one-life-sao-paulo':'One Life',
+              'the-grid-outworld':'The Grid',
+              'adriatique-x-sao-paulo':'Adriatique',
+              'crochestra-brasil':'Crochestra'
+          }
+          credits = {
+              'music-on-sao-paulo':[{'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},{'label':'@clickdoclayton','instagram':'https://www.instagram.com/clickdoclayton/','icon':'📷'}],
+              'one-life-sao-paulo':[{'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'}],
+              'the-grid-outworld':[{'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},{'label':'@pedrofatore_','instagram':'https://www.instagram.com/pedrofatore_/','icon':'📷'}],
+              'adriatique-x-sao-paulo':[{'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},{'label':'@pedrofatore_','instagram':'https://www.instagram.com/pedrofatore_/','icon':'📷'}],
+              'crochestra-brasil':[]
+          }
+
+          out = root/'assets'/'galleries'
+          out.mkdir(parents=True, exist_ok=True)
+          results = {}
+          max_photos = int(os.environ.get('MAX_PHOTOS','20'))
+
+          for row in gallery_rows:
+              if not row or not row[0] or not row[1]:
+                  continue
+              event_name = str(row[0]).strip().lower()
+              folder = str(row[1]).strip()
+              slug = slug_map.get(event_name)
+              if not slug:
+                  continue
+              tmp = Path('/tmp/drive')/slug
+              if tmp.exists(): shutil.rmtree(tmp)
+              tmp.mkdir(parents=True)
+              proc = subprocess.run(['gdown','--folder',folder,'--output',str(tmp)], text=True, capture_output=True, timeout=360)
+              files = []
+              if proc.returncode == 0:
+                  files = [p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.avif'}]
+                  files.sort(key=lambda p:p.name.lower())
+
+              stage = Path('/tmp/stage')/slug
+              if stage.exists(): shutil.rmtree(stage)
+              stage.mkdir(parents=True)
+              processed = 0
+              for src in files[:max_photos]:
+                  try:
+                      Image.open(src).convert('RGB').save(stage/f'{processed+1:02d}.jpg','JPEG',quality=94,optimize=True,progressive=True)
+                      processed += 1
+                  except Exception:
+                      pass
+
+              if processed:
+                  dest = out/slug
+                  if dest.exists(): shutil.rmtree(dest)
+                  stage.rename(dest)
+                  payload = {
+                      'event': labels[slug],
+                      'photos':[{'src':f'assets/galleries/{slug}/{i:02d}.jpg','name':f'{i:02d}'} for i in range(1,processed+1)],
+                      'credits':credits.get(slug,[]),
+                      'sourceFolder':folder,
+                      'warning':None,
+                      'importedCount':processed,
+                      'thumbnailLimit':8
+                  }
+                  (out/f'{slug}.json').write_text(json.dumps(payload, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+              results[slug] = {'status':'OK' if processed else 'FAILED_OR_EMPTY','files':len(files),'processed':processed,'gdown_exit':proc.returncode,'error':(proc.stderr or '')[-2500:]}
+
+          # Preserve existing galleries when a Drive folder temporarily fails; do not delete them.
+          report = ['# BeOn Master Sync Report','',f'Profile source: `{profile_url}`',f'Profile downloaded: **{profile_ok}**','', '| Evento | Status | Arquivos | Processadas | gdown |','|---|---|---:|---:|---:|']
+          for slug,r in results.items():
+              report.append(f"| {labels[slug]} | {r['status']} | {r['files']} | {r['processed']} | {r['gdown_exit']} |")
+          report += ['', '## Erros']
+          for slug,r in results.items():
+              report += [f"### {labels[slug]}", '```text', r['error'] or '(none)', '```']
+          (root/'beon-sync-report.md').write_text('\n'.join(report)+'\n',encoding='utf-8')
+          summary = ['## BeOn Master Sync', f'- Foto de perfil: **{profile_ok}**']
+          for slug,r in results.items():
+              summary.append(f"- **{labels[slug]}**: `{r['status']}` — {r['processed']} fotos processadas.")
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary)+'\n',encoding='utf-8')
+
+      - name: Validar estado final
+        run: |
+          test -s site-config.json
+          test -s beon-sync-report.md
+          test -f index.html
+          test -f event.html
+          if test -s assets/profile-matheus.jpg; then echo 'Foto de perfil local presente'; fi
+
+      - name: Publicar uma única vez
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html event.html assets/galleries site-config.json beon-sync-report.md assets/profile-matheus.jpg
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'sync: BeOn planilha Drive e site em conjunto [beon-master-sync]'
+          git push
