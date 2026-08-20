@@ -1,4 +1,4 @@
-name: Apply final visual fixes
+name: Apply final ambassador fixes
 
 on:
   push:
@@ -11,162 +11,36 @@ permissions:
   contents: write
 
 jobs:
-  apply-fixes:
+  fix:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Apply requested visual corrections
-        shell: python
+      - name: Download optimized profile photo and repair references
+        shell: bash
         run: |
+          set -e
+          mkdir -p assets
+          curl -L --fail --retry 3 --connect-timeout 15 --max-time 45 'https://unavatar.io/instagram/mat_mascena97' -o assets/matheus-profile.jpg
+          python3 - <<'PY'
           from pathlib import Path
           import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('https://www.instagram.com/matheusmascena/','https://www.instagram.com/mat_mascena97/')
+          s=re.sub(r'https://wa\\.me/\\?text=[^"\'<> ]*','https://w.app/matheusalves-fale-comigo',s)
+          s=s.replace('src="profile-photo.svg"','src="assets/matheus-profile.jpg" width="170" height="240" loading="eager" fetchpriority="high" decoding="async"')
+          s=s.replace('src="assets/profile-matheus.svg"','src="assets/matheus-profile.jpg" width="170" height="240" loading="eager" fetchpriority="high" decoding="async"')
+          p.write_text(s,encoding='utf-8')
+          PY
 
-          p = Path('index.html')
-          html = p.read_text(encoding='utf-8')
-
-          # Keep the ambassador badge directly above the hero/line-up label.
-          amb_re = re.compile(r'<section class="amb-wrap w">.*?</section>', re.S)
-          m = amb_re.search(html)
-          if m:
-              amb = m.group(0)
-              html = html[:m.start()] + html[m.end():]
-              hero_marker = '<section class="hero w">'
-              if hero_marker in html:
-                  html = html.replace(hero_marker, amb + hero_marker, 1)
-
-          # Keep Matheus's supplied profile image local to the repository.
-          html = html.replace('https://unavatar.io/instagram/mat_mascena97', 'assets/profile-matheus.svg')
-          html = html.replace('src="profile-photo.svg"', 'src="assets/profile-matheus.svg"')
-
-          # Add a dedicated coupon badge below the name once.
-          if 'class="profile-code-badge"' not in html and '<h3>Matheus Alves Mascena — 29 anos.</h3>' in html:
-              html = html.replace(
-                  '<h3>Matheus Alves Mascena — 29 anos.</h3>',
-                  '<h3>Matheus Alves Mascena — 29 anos.</h3><div class="profile-code-badge">CUPOM: <strong>MATHEUSMASCENA</strong> · 5% OFF</div>',
-                  1,
-              )
-
-          # Highlight the coupon in the main introductory text.
-          html = html.replace(
-              'e <b>5% OFF</b> usando o código: MATHEUSMASCENA.',
-              'e <b class="promo-off">5% OFF</b> usando o código: <strong class="promo-code">MATHEUSMASCENA</strong>.',
-          )
-          html = html.replace(
-              'and <b>5% OFF</b> using the code: MATHEUSMASCENA.',
-              'and <b class="promo-off">5% OFF</b> using the code: <strong class="promo-code">MATHEUSMASCENA</strong>.',
-          )
-          html = html.replace(
-              'y <b>5% OFF</b> usando el código: MATHEUSMASCENA.',
-              'y <b class="promo-off">5% OFF</b> usando el código: <strong class="promo-code">MATHEUSMASCENA</strong>.',
-          )
-
-          # Highlight the code inside the personal presentation paragraph.
-          html = html.replace(
-              'Utilize meu cupom MATHEUSMASCENA e garanta',
-              'Utilize meu cupom <strong class="profile-code-inline">MATHEUSMASCENA</strong> e garanta',
-          )
-          html = html.replace(
-              'Use my MATHEUSMASCENA coupon',
-              'Use my <strong class="profile-code-inline">MATHEUSMASCENA</strong> coupon',
-          )
-          html = html.replace(
-              'Usa mi cupón MATHEUSMASCENA y consigue',
-              'Usa mi cupón <strong class="profile-code-inline">MATHEUSMASCENA</strong> y consigue',
-          )
-
-          # Center the short text immediately above the presentation card.
-          intro = 'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b>5% OFF</b> usando o código: MATHEUSMASCENA.'
-          pos = html.rfind(intro)
-          if pos >= 0:
-              start = html.rfind('<p', 0, pos)
-              end = html.find('</p>', pos)
-              if start >= 0 and end >= 0:
-                  tag_end = html.find('>', start)
-                  opening = html[start:tag_end]
-                  if 'class=' in opening:
-                      opening = re.sub(r'class="([^"]*)"', lambda mm: 'class="' + mm.group(1) + ' footer-intro"', opening, count=1)
-                  else:
-                      opening += ' class="footer-intro"'
-                  html = html[:start] + opening + html[tag_end:end+4] + html[end+4:]
-
-          # Keep the same emphasis after the language selector replaces data-t text.
-          html = html.replace(
-              "'desc':'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b>5% OFF</b> usando o código: MATHEUSMASCENA.'",
-              "'desc':'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b class=\"promo-off\">5% OFF</b> usando o código: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'footer':'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b>5% OFF</b> usando o código: MATHEUSMASCENA.'",
-              "'footer':'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <b class=\"promo-off\">5% OFF</b> usando o código: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'desc':'A curated selection of the best electronic music events, with official purchase directly through Ingresse and <b>5% OFF</b> using the code: MATHEUSMASCENA.'",
-              "'desc':'A curated selection of the best electronic music events, with official purchase directly through Ingresse and <b class=\"promo-off\">5% OFF</b> using the code: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'footer':'A curated selection of the best electronic music events, with official purchase directly through Ingresse and <b>5% OFF</b> using the code: MATHEUSMASCENA.'",
-              "'footer':'A curated selection of the best electronic music events, with official purchase directly through Ingresse and <b class=\"promo-off\">5% OFF</b> using the code: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'desc':'Una selección de los mejores eventos de música electrónica, con compra oficial directamente por Ingresse y <b>5% OFF</b> usando el código: MATHEUSMASCENA.'",
-              "'desc':'Una selección de los mejores eventos de música electrónica, con compra oficial directamente por Ingresse y <b class=\"promo-off\">5% OFF</b> usando el código: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'footer':'Una selección de los mejores eventos de música electrónica, con compra oficial directamente por Ingresse y <b>5% OFF</b> usando el código: MATHEUSMASCENA.'",
-              "'footer':'Una selección de los mejores eventos de música electrónica, con compra oficial directamente por Ingresse y <b class=\"promo-off\">5% OFF</b> usando el código: <strong class=\"promo-code\">MATHEUSMASCENA</strong>.'",
-          )
-          html = html.replace(
-              "'bio':'Olá, tudo bem? Me chamo Matheus Mascena e sou um dos embaixadores da Be-On e assim como você, sou apaixonado por música eletrônica e todas as suas vertentes. Pensando nisso, criei este espaço para facilitar a vida dos amantes da música eletrônica que buscam obter descontos para seus eventos favoritos. Utilize meu cupom MATHEUSMASCENA e garanta",
-              "'bio':'Olá, tudo bem? Me chamo Matheus Mascena e sou um dos embaixadores da Be-On e assim como você, sou apaixonado por música eletrônica e todas as suas vertentes. Pensando nisso, criei este espaço para facilitar a vida dos amantes da música eletrônica que buscam obter descontos para seus eventos favoritos. Utilize meu cupom <strong class=\"profile-code-inline\">MATHEUSMASCENA</strong> e garanta",
-          )
-          html = html.replace(
-              "Use my MATHEUSMASCENA coupon and get",
-              "Use my <strong class=\"profile-code-inline\">MATHEUSMASCENA</strong> coupon and get",
-          )
-
-          # One final override block keeps the presentation visually balanced.
-          fixes = '''<style id="presentation-refinements-v3">
-          .footer-intro{display:block!important;width:min(900px,100%);max-width:900px!important;margin:0 auto 18px!important;padding:0 24px!important;text-align:center!important;color:var(--u);font-size:11px;line-height:1.7}
-          .footer-intro .promo-off{color:var(--c);font-weight:800}
-          .footer-intro .promo-code{color:var(--m);font-weight:800;text-shadow:0 0 10px #ff2f9238}
-          .hero .promo-off{color:var(--c);font-weight:800}
-          .hero .promo-code{color:var(--m);font-weight:800;text-shadow:0 0 12px #ff2f9238}
-          .profile{max-width:900px;width:calc(100% - 48px);grid-template-columns:170px minmax(0,1fr);gap:30px;padding:28px 30px;margin:0 auto;border-radius:22px;align-items:center}
-          .profile-photo{width:170px;height:240px;max-width:100%;border-radius:20px;border:1px solid #3fe0d088;object-fit:contain;object-position:center;background:linear-gradient(145deg,#0e0a17,#171024);box-shadow:0 10px 30px #0006;display:block;margin:0 auto}
-          .profile>div:last-child{min-width:0;text-align:left}
-          .profile h3{font-size:34px;margin:0 0 9px;color:var(--c);text-shadow:0 0 18px #3fe0d055;line-height:1}
-          .profile-code-badge{display:inline-flex;align-items:center;gap:4px;margin:0 0 14px;padding:7px 11px;border:1px solid #ff2f9255;border-radius:9px;background:#ff2f9212;color:var(--m);font-size:10px;font-weight:700;letter-spacing:.04em;box-shadow:0 0 16px #ff2f9212}
-          .profile-code-badge strong,.profile-code-inline{color:var(--m)!important;font-weight:800;text-shadow:0 0 9px #ff2f9238}
-          .profile p{font-size:11px;line-height:1.78;margin:0 0 18px;color:var(--u)}
-          .profile .links{gap:8px;align-items:center}
-          .profile .links a{padding:9px 11px}
-          @media(max-width:760px){
-            .footer-intro{padding:0 18px!important}
-            .profile{width:calc(100% - 32px);grid-template-columns:1fr;gap:18px;padding:22px 18px;text-align:center}
-            .profile-photo{width:150px;height:215px;margin:0 auto}
-            .profile>div:last-child{text-align:center}
-            .profile h3{font-size:29px;line-height:1.05}
-            .profile .links{justify-content:center}
-          }
-          </style>'''
-          if 'id="presentation-refinements-v3"' in html:
-              html = re.sub(r'<style id="presentation-refinements-v3">.*?</style>', fixes, html, count=1, flags=re.S)
-          else:
-              html = html.replace('</head>', fixes + '</head>', 1)
-
-          p.write_text(html, encoding='utf-8')
-          print('Presentation refinements applied.')
-
-      - name: Commit changes
+      - name: Commit definitive profile/contact fix
+        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-          git commit -m "Preserve coupon highlighting across languages"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/matheus-profile.jpg
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'fix: correct Instagram WhatsApp and profile photo [profile-contact-fix]'
           git push
