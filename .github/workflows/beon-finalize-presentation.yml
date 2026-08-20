@@ -1,0 +1,114 @@
+name: BeOn final presentation sync
+
+on:
+  push:
+    paths:
+      - '.github/workflows/beon-finalize-presentation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-finalized]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Consolidate presentation and visual state
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import shutil
+
+          index = Path('index.html')
+          s = index.read_text(encoding='utf-8')
+
+          # The repository already contains the previously versioned profile SVG.
+          # Copy it to a stable assets path and cache-bust the browser reference.
+          src = Path('profile-photo.svg')
+          dst = Path('assets/profile-matheus.svg')
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          if src.exists():
+              shutil.copyfile(src, dst)
+          photo = 'assets/profile-matheus.svg?v=20260820-profile'
+
+          # Correct personal contacts everywhere in the current page.
+          instagram = 'https://www.instagram.com/mat_mascena97/'
+          whatsapp = 'https://w.app/matheusalves-fale-comigo'
+          s = re.sub(r'https://www\\.instagram\\.com/[^"\\']*', instagram, s)
+          s = re.sub(r'https://(?:wa\\.me/[^"\\']*|w\\.app/[^"\\']*)', whatsapp, s)
+
+          # Exact requested intro text.
+          requested_intro = ('Descubra os próximos eventos, veja fotos oficiais, salve seus favoritos '
+                             'e garanta seu ingresso diretamente da plataforma Ingresse com 5% de '
+                             'desconto com meu cupom.')
+          s = re.sub(r'<p class="hero-sub">.*?</p>', f'<p class="hero-sub">{requested_intro}</p>', s, count=1, flags=re.S)
+
+          # Remove old top ambassador pill wording if still present, but keep the top name/role.
+          s = s.replace('<span class="eyebrow">BE·ON AMBASSADOR</span>', '')
+          s = s.replace('<span class="eyebrow">Matheus Alves Mascena · Embaixador Be-On</span>', '<span class="eyebrow">Matheus Alves Mascena · Embaixador Be-On</span>')
+
+          # Use the stable local profile image for every presentation image.
+          s = re.sub(r'<img([^>]+?)src="(?:profile-photo\\.svg|assets/profile-matheus\\.(?:svg|png)|assets/matheus-profile\\.jpg)"([^>]*)>',
+                     lambda m: f'<img{m.group(1)}src="{photo}"{m.group(2)}>', s, flags=re.I)
+
+          # Make the top image explicit if the current source was not matched.
+          s = s.replace('src="profile-photo.svg"', f'src="{photo}"')
+
+          # Restore the complete bottom presentation section exactly once.
+          start = '<section id="ambassador-bottom-presentation"'
+          if start in s:
+              s = re.sub(r'<section id="ambassador-bottom-presentation"[\\s\\S]*?</section>\\s*', '', s, count=1)
+
+          block = f'''<section id="ambassador-bottom-presentation" class="ambassador-bottom wrap" aria-label="Apresentação do embaixador">
+            <div class="ambassador-bottom-card">
+              <div class="ambassador-bottom-photo"><img src="{photo}" alt="Matheus Alves Mascena" width="220" height="320" loading="lazy" decoding="async"></div>
+              <div class="ambassador-bottom-copy">
+                <span class="eyebrow">CONHEÇA O EMBAIXADOR</span>
+                <h2>Matheus Alves Mascena</h2>
+                <div class="role">Embaixador Be-On</div>
+                <p>Olá, tudo bem? Me chamo Matheus Mascena e sou um dos embaixadores da Be-On e, assim como você, sou apaixonado por música eletrônica e todas as suas vertentes. Pensando nisso, criei este espaço para facilitar a vida dos amantes da música eletrônica que buscam obter descontos para seus eventos favoritos. Utilize meu cupom <strong>MATHEUSMASCENA</strong> e garanta <strong>5% de desconto</strong> na compra do seu ingresso.</p>
+                <div class="amb-links"><a href="{instagram}" target="_blank" rel="noopener">📷 Instagram</a><a href="{whatsapp}" target="_blank" rel="noopener">💬 WhatsApp</a></div>
+              </div>
+            </div>
+          </section>'''
+
+          # Put the bottom presentation immediately before the footer.
+          s = s.replace('</main>\n<footer>', block + '\n</main>\n<footer>', 1)
+          if block not in s and '</main>' in s:
+              s = s.replace('</main>', block + '\n</main>', 1)
+
+          # Small live clock only: date/time of the visitor, no event countdown.
+          if 'id="liveClock"' not in s:
+              s = s.replace('</header>', '<script>document.addEventListener("DOMContentLoaded",()=>{const c=document.getElementById("liveClock");if(c){const u=()=>{const n=new Date();c.textContent=n.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"})+" · "+n.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})};u();setInterval(u,1000)}});</script></header>', 1)
+
+          # Ensure bottom presentation CSS is present.
+          if 'beon-ambassador-bottom-final' not in s:
+              css = '''<style id="beon-ambassador-bottom-final">.ambassador-bottom{padding:6px 22px 36px}.ambassador-bottom-card{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:center;padding:24px;border:1px solid #7c5cff55;border-radius:24px;background:linear-gradient(135deg,#7c5cff15,#ff2f9208,#3fe0d006),#0d0914dd;box-shadow:0 20px 55px #0008,0 0 45px #7c5cff12;overflow:hidden}.ambassador-bottom-photo img{display:block;width:220px;height:320px;object-fit:cover;border-radius:18px;border:1px solid #3fe0d080;box-shadow:0 0 35px #7c5cff18}.ambassador-bottom-copy h2{font:38px/.95 'Bebas Neue';margin:10px 0 4px;background:linear-gradient(100deg,#fff,#3fe0d0,#8e77ff,#ff2f92);-webkit-background-clip:text;color:transparent}.ambassador-bottom-copy .role{color:#a49ab5;font-size:12px;margin-bottom:14px}.ambassador-bottom-copy p{font-size:14px;line-height:1.85;color:#c5bccf;margin:0}.ambassador-bottom-copy strong{color:#3fe0d0}.ambassador-bottom-copy .amb-links{margin-top:16px}@media(max-width:700px){.ambassador-bottom-card{grid-template-columns:1fr;text-align:center}.ambassador-bottom-photo img{margin:auto;width:min(220px,70vw);height:auto;aspect-ratio:3/4}.ambassador-bottom-copy .amb-links{justify-content:center}}</style>'''
+              s = s.replace('</head>', css + '\n</head>', 1)
+
+          index.write_text(s, encoding='utf-8')
+
+          # Remove conflicting one-off presentation workflows so they cannot overwrite this state.
+          for p in [
+              Path('.github/workflows/restore-profile-presentation.yml'),
+              Path('.github/workflows/finalize-profile-presentation.yml'),
+              Path('.github/workflows/profile-presentation.yml'),
+          ]:
+              if p.exists():
+                  p.unlink()
+
+      - name: Commit final consolidated state
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/profile-matheus.svg
+          git rm --cached --ignore-unmatch .github/workflows/restore-profile-presentation.yml .github/workflows/finalize-profile-presentation.yml .github/workflows/profile-presentation.yml || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix: consolidate BeOn presentation and profile state [beon-finalized]"
+          git push
