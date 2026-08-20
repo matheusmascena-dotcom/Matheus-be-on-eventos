@@ -5,19 +5,19 @@ on:
   push:
     branches: [main]
     paths:
-      - 'data/Eventos - Be On _ 2026(5)_V3_Final.xlsx'
+      - 'profile-config.json'
       - '.github/workflows/beon-master-sync.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: beon-master-sync
+  group: beon-profile-sync
   cancel-in-progress: true
 
 jobs:
-  remove-profile-image:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-removal]') }}
+  profile:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-sync]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,49 +25,63 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Remover somente as fotos da apresentação
+      - name: Aplicar perfil e centralizar apresentação
         shell: python
         run: |
+          import json
           import re
           from pathlib import Path
 
-          css = '''\n<style id="beon-no-profile-photo">\n.amb-photo,.ambassador-bottom-photo{display:none!important}\n.hero-inner{grid-template-columns:1fr!important}\n.ambassador-bottom-card{grid-template-columns:1fr!important}\n</style>\n'''
+          root = Path('.')
+          cfg = json.loads((root / 'profile-config.json').read_text(encoding='utf-8'))
+          image_url = cfg['profileImage']
+          p = root / 'index.html'
+          html = p.read_text(encoding='utf-8')
 
-          for filename in ("index.html", "event.html"):
-              p = Path(filename)
-              if not p.exists():
-                  continue
-              html = p.read_text(encoding="utf-8")
+          html = re.sub(r'<style id="beon-no-profile-photo">.*?</style>\s*', '', html, flags=re.S)
+          html = re.sub(r'<style id="beon-profile-layout-final">.*?</style>\s*', '', html, flags=re.S)
 
-              # Remove the known profile-photo containers entirely.
-              html = re.sub(r'<div\s+class=["\']amb-photo["\'][^>]*>.*?</div>', '', html, flags=re.I|re.S)
-              html = re.sub(r'<div\s+class=["\']ambassador-bottom-photo["\'][^>]*>.*?</div>', '', html, flags=re.I|re.S)
+          if 'class="amb-photo"' not in html:
+              html, n = re.subn(
+                  r'(<div class="hero-inner">)\s*(<div class="amb-copy">)',
+                  r'\1\n<div class="amb-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="eager" fetchpriority="high" decoding="async"></div>\n\2',
+                  html, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit('Estrutura hero-inner não encontrada.')
+          else:
+              html = re.sub(
+                  r'(<div class="amb-photo"><img[^>]*src=")[^"]*("[^>]*>\s*</div>)',
+                  r'\1' + image_url + r'\2', html, count=1, flags=re.S)
 
-              # Remove any remaining profile image element, regardless of its old source.
-              html = re.sub(r'<img\b(?=[^>]*(?:profile-matheus|profile-photo|matheus-profile|drive\.google\.com/thumbnail))[^>]*>', '', html, flags=re.I|re.S)
+          if 'class="ambassador-bottom-card"' in html:
+              if 'class="ambassador-bottom-photo"' not in html:
+                  html, n = re.subn(
+                      r'(<div class="ambassador-bottom-card">)\s*(<div class="ambassador-bottom-copy">)',
+                      r'\1\n<div class="ambassador-bottom-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="lazy" decoding="async"></div>\n\2',
+                      html, count=1, flags=re.S)
+                  if n != 1:
+                      raise SystemExit('Apresentação inferior não encontrada.')
+              else:
+                  html = re.sub(
+                      r'(<div class="ambassador-bottom-photo"><img[^>]*src=")[^"]*("[^>]*>\s*</div>)',
+                      r'\1' + image_url + r'\2', html, count=1, flags=re.S)
 
-              # Keep the layout single-column so no empty photo column remains.
-              html = re.sub(r'<style\s+id=["\']beon-no-profile-photo["\']>.*?</style>', '', html, flags=re.I|re.S)
-              html = html.replace('</head>', css + '</head>', 1)
-              p.write_text(html, encoding='utf-8')
+          style = '''\n<style id="beon-profile-layout-final">\n.hero-inner{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:20px!important}\n.amb-photo{width:min(220px,42vw)!important;margin:0 auto!important}\n.amb-photo img{display:block!important;width:100%!important;height:auto!important;aspect-ratio:3/4!important;object-fit:cover!important;border-radius:22px!important}\n.amb-copy{width:100%!important;max-width:900px!important;display:flex!important;flex-direction:column!important;align-items:center!important}\n.ambassador-bottom-card{grid-template-columns:1fr!important;text-align:center!important;justify-items:center!important}\n.ambassador-bottom-photo img{display:block!important;margin:0 auto!important;width:min(220px,42vw)!important;height:auto!important;aspect-ratio:3/4!important;object-fit:cover!important}\n.ambassador-bottom-copy{width:100%!important;max-width:900px!important}\n@media(max-width:700px){.amb-photo,.ambassador-bottom-photo img{width:min(210px,68vw)!important}}\n</style>\n'''
+          html = re.sub(r'</head>', style + '</head>', html, count=1, flags=re.I)
+          p.write_text(html, encoding='utf-8')
+          print(image_url)
 
-          # Remove the old profile image asset so it cannot be used again.
-          old_asset = Path('assets/profile-matheus-uploaded.svg')
-          if old_asset.exists():
-              old_asset.unlink()
-
-      - name: Validar que não existe mais foto de apresentação
-        shell: bash
+      - name: Validar
         run: |
-          ! grep -RniE 'profile-matheus|profile-photo|matheus-profile|drive.google.com/thumbnail' index.html event.html || true
-          test ! -e assets/profile-matheus-uploaded.svg
+          grep -F 'drive.google.com/thumbnail?id=1vrISCF_6pWFQAlOg6PabIOP9k3X6R4nM' index.html
+          grep -F 'beon-profile-layout-final' index.html
+          grep -F 'amb-photo' index.html
 
-      - name: Publicar uma única vez
-        shell: bash
+      - name: Publicar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html event.html assets/profile-matheus-uploaded.svg
+          git add index.html profile-config.json .github/workflows/beon-master-sync.yml
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'fix: remover fotos da apresentação [beon-profile-removal]'
+          git commit -m 'sync: aplicar foto de perfil e centralizar apresentação [beon-profile-sync]'
           git push
