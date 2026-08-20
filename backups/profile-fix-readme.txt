@@ -1,0 +1,1 @@
+Backup point created before final profile-photo/presentation consolidation on 2026-08-20. Existing event cards, Drive gallery sync, Supabase admin, favorites, search, sharing and mobile navigation are preserved.
