@@ -1,18 +1,6 @@
 {
-  "event": "One Life",
+  "photos": [],
+  "credits": [],
   "sourceFolder": "https://drive.google.com/drive/folders/11FUlmMiVFobyh8O_FYjaScR9AkXfqkrh?usp=sharing",
-  "photos": [
-    {"src":"assets/galleries/one-life-sao-paulo/01.jpg","name":"9K4A5110"},
-    {"src":"assets/galleries/one-life-sao-paulo/02.jpg","name":"9K4A5333"},
-    {"src":"assets/galleries/one-life-sao-paulo/03.jpg","name":"1"},
-    {"src":"assets/galleries/one-life-sao-paulo/04.jpg","name":"9K4A5328"},
-    {"src":"assets/galleries/one-life-sao-paulo/05.jpg","name":"manu bibi1-6"},
-    {"src":"assets/galleries/one-life-sao-paulo/06.jpg","name":"9K4A5212"},
-    {"src":"assets/galleries/one-life-sao-paulo/07.jpg","name":"@mellamojulian - BIBI_6"},
-    {"src":"assets/galleries/one-life-sao-paulo/08.jpg","name":"manu bibi1-14"}
-  ],
-  "credits": [
-    {"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/","icon":"📷"}
-  ],
-  "warning": null
+  "warning": "Nenhuma foto acessível nesta sincronização."
 }
