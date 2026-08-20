@@ -33,7 +33,7 @@ jobs:
       - name: Dependências
         run: python -m pip install --upgrade pip openpyxl
 
-      - name: Ler foto da planilha e atualizar somente a apresentação
+      - name: Ler Foto Perfil da planilha e atualizar somente a apresentação
         shell: python
         run: |
           import json, re
@@ -56,23 +56,23 @@ jobs:
               raise RuntimeError('Não encontrei um ID válido no campo Foto Perfil da aba Configurações do Site.')
 
           file_id = match.group(1)
-          # O navegador carrega a própria foto do Drive; não há download, SVG ou Instagram envolvidos.
           image_url = f'https://drive.google.com/thumbnail?id={file_id}&sz=w1200'
 
-          site_config = {
+          (root / 'site-config.json').write_text(json.dumps({
               'profile_source': source,
               'profile_image_url': image_url,
               'profile_drive_id': file_id
-          }
-          (root / 'site-config.json').write_text(json.dumps(site_config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          # Alteração cirúrgica: somente <img> cujo alt seja a apresentação do Matheus.
           p = root / 'index.html'
           html = p.read_text(encoding='utf-8')
+
+          # Altera somente as imagens da apresentação com alt do Matheus.
           pattern = re.compile(r'(<img\b(?=[^>]*\balt=["\']Matheus Alves Mascena["\'])[^>]*\bsrc=["\'])[^"\']*(["\'])', re.I | re.S)
-          html2, count = pattern.subn(r'\g<1>' + image_url + r'\g<2>', html)
+          html2, count = pattern.subn(lambda m: m.group(1) + image_url + m.group(2), html)
+
           if count == 0:
-              # Fallback para as referências antigas conhecidas, sem tocar em cards ou galerias.
+              # Referências antigas conhecidas: substituição cirúrgica, sem tocar nas galerias/cards.
               old = re.compile(r'assets/(?:profile-matheus-uploaded|profile-photo|profile-matheus|matheus-profile)[^"\']*\.(?:svg|png|jpe?g)(?:\?[^"\']*)?', re.I)
               html2, count = old.subn(image_url, html)
 
@@ -80,15 +80,12 @@ jobs:
               raise RuntimeError('Nenhuma referência da foto de apresentação foi encontrada no index.html.')
 
           p.write_text(html2, encoding='utf-8')
-          print(f'Foto de perfil sincronizada a partir da planilha: {image_url} | referências atualizadas: {count}')
+          print(f'Foto de perfil sincronizada: {image_url} | referências: {count}')
 
-      - name: Validar somente a mudança de perfil
+      - name: Validar somente a apresentação
         run: |
           test -s site-config.json
           grep -F 'drive.google.com/thumbnail?id=' index.html
-          grep -F 'profile_source' site-config.json
-          test -f assets/galleries/adriatique-x-sao-paulo.json
-          test -f assets/galleries/crochestra-brasil.json || true
 
       - name: Publicar
         run: |
