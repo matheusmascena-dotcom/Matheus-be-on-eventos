@@ -37,13 +37,13 @@ jobs:
         run: |
           python3 - <<'PY'
           import os, json, shutil, subprocess, pathlib
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
           from PIL import Image
 
           root = pathlib.Path('.')
           gallery_root = root / 'assets' / 'galleries'
-          cover_root = root / 'assets' / 'covers'
           gallery_root.mkdir(parents=True, exist_ok=True)
-          cover_root.mkdir(parents=True, exist_ok=True)
 
           galleries = {
             'music-on-sao-paulo': (os.environ['MUSIC_ON_DRIVE'], [
@@ -64,21 +64,41 @@ jobs:
             'crochestra-brasil': (os.environ['CROCHESTRA_DRIVE'], [])
           }
 
-          report = []
-          results = {}
+          labels = {
+            'music-on-sao-paulo':'Music On',
+            'one-life-sao-paulo':'One Life',
+            'the-grid-outworld':'The Grid',
+            'adriatique-x-sao-paulo':'Adriatique',
+            'crochestra-brasil':'Crochestra'
+          }
+
           max_import = int(os.environ.get('MAX_IMPORT', '20'))
           max_display = int(os.environ.get('MAX_DISPLAY', '20'))
+          results = {}
+
+          def http_probe(url):
+              try:
+                  req = Request(url, headers={'User-Agent':'Mozilla/5.0'})
+                  with urlopen(req, timeout=30) as r:
+                      sample = r.read(5000).decode('utf-8', 'ignore')
+                      return {'http': r.status, 'content_type': r.headers.get('content-type',''), 'final_url': r.geturl(), 'sample': sample[:300]}
+              except HTTPError as e:
+                  return {'http': e.code, 'content_type': '', 'final_url': getattr(e, 'url', url), 'sample': str(e)}
+              except URLError as e:
+                  return {'http': 'ERROR', 'content_type': '', 'final_url': url, 'sample': str(e.reason)}
+              except Exception as e:
+                  return {'http': 'ERROR', 'content_type': '', 'final_url': url, 'sample': str(e)}
 
           def sync_gallery(url, slug):
+              probe = http_probe(url)
               tmp = pathlib.Path('/tmp/drive_' + slug)
-              if tmp.exists():
-                  shutil.rmtree(tmp)
+              if tmp.exists(): shutil.rmtree(tmp)
               tmp.mkdir(parents=True)
 
-              cmd = ['gdown', '--folder', url, '--output', str(tmp), '--remaining-ok', '--quiet']
+              cmd = ['gdown', '--folder', url, '--output', str(tmp), '--remaining-ok']
               r = subprocess.run(cmd, text=True, capture_output=True)
-              stdout = (r.stdout or '')[-3000:]
-              stderr = (r.stderr or '')[-3000:]
+              stdout = (r.stdout or '')[-5000:]
+              stderr = (r.stderr or '')[-5000:]
 
               files = []
               if r.returncode == 0:
@@ -86,11 +106,10 @@ jobs:
                   files.sort(key=lambda p: p.name.lower())
 
               if not files:
-                  return {'status':'FAILED_OR_EMPTY', 'downloaded':0, 'usable':0, 'stdout':stdout, 'stderr':stderr}
+                  return {'status':'FAILED_OR_EMPTY','downloaded':0,'usable':0,'probe':probe,'gdown_exit':r.returncode,'stdout':stdout,'stderr':stderr}
 
               stage = pathlib.Path('/tmp/stage_' + slug)
-              if stage.exists():
-                  shutil.rmtree(stage)
+              if stage.exists(): shutil.rmtree(stage)
               stage.mkdir(parents=True)
 
               usable = 0
@@ -100,91 +119,58 @@ jobs:
                       usable += 1
                       im.save(stage / f'{usable:02d}.jpg', 'JPEG', quality=94, optimize=True, progressive=True)
                   except Exception as e:
-                      print(f'[{slug}] image conversion failed: {p}: {e}')
+                      stderr += f'\nconversion: {p}: {e}'
 
               if usable == 0:
-                  return {'status':'FAILED_OR_EMPTY', 'downloaded':len(files), 'usable':0, 'stdout':stdout, 'stderr':stderr}
+                  return {'status':'FAILED_OR_EMPTY','downloaded':len(files),'usable':0,'probe':probe,'gdown_exit':r.returncode,'stdout':stdout,'stderr':stderr}
 
               out = gallery_root / slug
-              if out.exists():
-                  shutil.rmtree(out)
+              if out.exists(): shutil.rmtree(out)
               stage.rename(out)
-              return {'status':'OK', 'downloaded':len(files), 'usable':usable, 'stdout':stdout, 'stderr':stderr}
+              total = min(usable, max_display)
+              payload = {
+                  'photos':[{'src':f'assets/galleries/{slug}/{i:02d}.jpg','name':f'{i:02d}'} for i in range(1,total+1)],
+                  'credits': galleries[slug][1],
+                  'sourceFolder': url,
+                  'warning': None,
+                  'importedCount': usable
+              }
+              (gallery_root/f'{slug}.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+              return {'status':'OK','downloaded':len(files),'usable':usable,'probe':probe,'gdown_exit':r.returncode,'stdout':stdout,'stderr':stderr}
 
-          for slug, (url, credits) in galleries.items():
-              result = sync_gallery(url, slug)
-              results[slug] = result
-              json_path = gallery_root / f'{slug}.json'
+          for slug,(url,credits) in galleries.items():
+              results[slug] = sync_gallery(url, slug)
 
-              if result['usable'] > 0:
-                  total = min(result['usable'], max_display)
-                  photos = [
-                      {'src':f'assets/galleries/{slug}/{i:02d}.jpg', 'name':f'{i:02d}'}
-                      for i in range(1, total + 1)
-                  ]
-                  payload = {
-                      'photos': photos,
-                      'credits': credits,
-                      'sourceFolder': url,
-                      'warning': None,
-                      'importedCount': result['usable']
-                  }
-                  json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-              else:
-                  # Preserve the last known good gallery; do not destroy it because Drive was unavailable.
-                  print(f'[{slug}] Drive unavailable or empty; preserving existing gallery files')
+          report = [
+            '# Diagnóstico de sincronização do Google Drive','',
+            f'Importação máxima: **{max_import} fotos por evento**. Exibição cadastrada: **{max_display}**.','',
+            '| Evento | Resultado | HTTP | Arquivos encontrados | Processadas | gdown |',
+            '|---|---|---:|---:|---:|---:|'
+          ]
+          for slug,res in results.items():
+              report.append(f"| {labels[slug]} | {res['status']} | {res['probe']['http']} | {res['downloaded']} | {res['usable']} | {res['gdown_exit']} |")
+          report += ['', '## Detalhes técnicos']
+          for slug,res in results.items():
+              report += [f"### {labels[slug]}", f"- URL final: `{res['probe']['final_url']}`", f"- Content-Type: `{res['probe']['content_type']}`", f"- Resposta HTTP: `{res['probe']['http']}`", f"- gdown exit: `{res['gdown_exit']}`"]
+              if res['stderr']:
+                  report += ['- Erro/saída do gdown:', '```text', res['stderr'][-3000:], '```']
+              report.append('')
+          report += ['## Interpretação','- **OK** = a pasta foi acessada e as fotos foram importadas.','- **FAILED_OR_EMPTY** = o runner chegou ao link, mas não conseguiu obter arquivos de imagem da pasta.','- Se HTTP for **200** e gdown continuar em 0, o bloqueio está no formato/listagem do Google Drive e não no GitHub Pages.']
 
-          labels = {
-            'music-on-sao-paulo':'Music On',
-            'one-life-sao-paulo':'One Life',
-            'the-grid-outworld':'The Grid',
-            'adriatique-x-sao-paulo':'Adriatique',
-            'crochestra-brasil':'Crochestra'
-          }
+          (root/'drive-sync-report.md').write_text('\n'.join(report)+'\n',encoding='utf-8')
+          summary = ['## Resultado da sincronização do Drive']
+          for slug,res in results.items():
+              summary.append(f"- **{labels[slug]}**: `{res['status']}` — HTTP `{res['probe']['http']}`, {res['downloaded']} arquivos, {res['usable']} processados, gdown `{res['gdown_exit']}`.")
+          pathlib.Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary)+'\n',encoding='utf-8')
 
-          report.append('# Diagnóstico de sincronização do Google Drive')
-          report.append('')
-          report.append(f'Importação máxima: **{max_import} fotos por evento**; limite de exibição cadastrado: **{max_display}**.')
-          report.append('')
-          report.append('| Evento | Resultado | Arquivos encontrados | Imagens processadas |')
-          report.append('|---|---|---:|---:|')
-          for slug, result in results.items():
-              report.append(f"| {labels[slug]} | {result['status']} | {result['downloaded']} | {result['usable']} |")
-          report.append('')
-          report.append('## Interpretação')
-          report.append('- **OK**: a pasta foi acessada e as imagens foram processadas.')
-          report.append('- **FAILED_OR_EMPTY**: o GitHub Actions não conseguiu obter imagens acessíveis da pasta nesta execução; a galeria anterior foi preservada.')
-          report.append('')
-
-          (root / 'drive-sync-report.md').write_text('\n'.join(report) + '\n', encoding='utf-8')
-
-          summary = []
-          summary.append('## Resultado da sincronização do Drive')
-          for slug, result in results.items():
-              summary.append(f"- **{labels[slug]}**: `{result['status']}` — {result['downloaded']} arquivos encontrados, {result['usable']} processados.")
-          summary.append('')
-          summary.append('Relatório completo: `drive-sync-report.md`')
-          pathlib.Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary) + '\n', encoding='utf-8')
-
-          # Keep the existing verified local cover images and fix known extensions.
-          index = root / 'index.html'
-          event = root / 'event.html'
-          for p in [index, event]:
-              if not p.exists():
-                  continue
-              s = p.read_text(encoding='utf-8')
-              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo','unreal-the-grid']:
-                  s = s.replace(f'assets/covers/{slug}.webp', f'assets/covers/{slug}.jpg')
-              p.write_text(s, encoding='utf-8')
+          # If every folder returns zero images, keep the job diagnostic but successful so existing site assets remain online.
           PY
 
       - name: Commit synchronization results and diagnostics
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/galleries drive-sync-report.md index.html event.html
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "sync: import up to 20 Drive photos and publish diagnostics [drive-gallery-sync]"
+          git add assets/galleries drive-sync-report.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "diag: detailed Drive access report [drive-gallery-sync]"
           git push
