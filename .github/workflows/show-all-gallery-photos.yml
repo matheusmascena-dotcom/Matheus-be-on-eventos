@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
 
+# v2 - force workflow activation
 jobs:
   patch:
     runs-on: ubuntu-latest
