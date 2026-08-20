@@ -1,5 +1,5 @@
 STATUS=SUCCESS
-PHOTO=assets/profile-matheus-uploaded.jpg
+PHOTO=assets/profile-matheus-uploaded.svg
 BOTTOM_PRESENTATION=RESTORED
 INSTAGRAM=https://www.instagram.com/mat_mascena97/
 WHATSAPP=https://w.app/matheusalves-fale-comigo
