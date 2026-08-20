@@ -10,7 +10,8 @@ permissions:
   contents: write
 
 env:
-  SYNC_REVISION: '2026-08-20-card-fix-2'
+  MAX_IMPORT: '20'
+  MAX_DISPLAY: '20'
 
 jobs:
   sync:
@@ -26,7 +27,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install gdown pillow
 
-      - name: Sync galleries without destructive fallback
+      - name: Sync Drive galleries and create diagnostic report
         env:
           MUSIC_ON_DRIVE: 'https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing'
           ONE_LIFE_DRIVE: 'https://drive.google.com/drive/folders/11FUlmMiVFobyh8O_FYjaScR9AkXfqkrh?usp=sharing'
@@ -38,13 +39,13 @@ jobs:
           import os, json, shutil, subprocess, pathlib
           from PIL import Image
 
-          root=pathlib.Path('.')
-          gallery_root=root/'assets'/'galleries'
-          cover_root=root/'assets'/'covers'
+          root = pathlib.Path('.')
+          gallery_root = root / 'assets' / 'galleries'
+          cover_root = root / 'assets' / 'covers'
           gallery_root.mkdir(parents=True, exist_ok=True)
           cover_root.mkdir(parents=True, exist_ok=True)
 
-          galleries={
+          galleries = {
             'music-on-sao-paulo': (os.environ['MUSIC_ON_DRIVE'], [
               {'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},
               {'label':'@clickdoclayton','instagram':'https://www.instagram.com/clickdoclayton/','icon':'📷'}
@@ -63,136 +64,127 @@ jobs:
             'crochestra-brasil': (os.environ['CROCHESTRA_DRIVE'], [])
           }
 
-          def sync_gallery(url, slug):
-              tmp=pathlib.Path('/tmp/drive_'+slug)
-              if tmp.exists(): shutil.rmtree(tmp)
-              tmp.mkdir(parents=True)
-              cmd=['gdown','--folder',url,'--output',str(tmp),'--remaining-ok']
-              r=subprocess.run(cmd, text=True, capture_output=True)
-              print(f'[{slug}] gdown exit={r.returncode}')
-              if r.stdout: print(r.stdout[-4000:])
-              if r.stderr: print(r.stderr[-4000:])
-              if r.returncode!=0:
-                  return 0
-              files=[p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.gif'}]
-              files.sort(key=lambda p:p.name.lower())
-              if not files:
-                  return 0
+          report = []
+          results = {}
+          max_import = int(os.environ.get('MAX_IMPORT', '20'))
+          max_display = int(os.environ.get('MAX_DISPLAY', '20'))
 
-              out=gallery_root/slug
-              stage=pathlib.Path('/tmp/stage_'+slug)
-              if stage.exists(): shutil.rmtree(stage)
+          def sync_gallery(url, slug):
+              tmp = pathlib.Path('/tmp/drive_' + slug)
+              if tmp.exists():
+                  shutil.rmtree(tmp)
+              tmp.mkdir(parents=True)
+
+              cmd = ['gdown', '--folder', url, '--output', str(tmp), '--remaining-ok', '--quiet']
+              r = subprocess.run(cmd, text=True, capture_output=True)
+              stdout = (r.stdout or '')[-3000:]
+              stderr = (r.stderr or '')[-3000:]
+
+              files = []
+              if r.returncode == 0:
+                  files = [p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.gif','.bmp'}]
+                  files.sort(key=lambda p: p.name.lower())
+
+              if not files:
+                  return {'status':'FAILED_OR_EMPTY', 'downloaded':0, 'usable':0, 'stdout':stdout, 'stderr':stderr}
+
+              stage = pathlib.Path('/tmp/stage_' + slug)
+              if stage.exists():
+                  shutil.rmtree(stage)
               stage.mkdir(parents=True)
 
-              count=0
-              for p in files[:20]:
+              usable = 0
+              for p in files[:max_import]:
                   try:
-                      im=Image.open(p).convert('RGB')
-                      count+=1
-                      im.save(stage/f'{count:02d}.jpg', 'JPEG', quality=94, optimize=True, progressive=True)
+                      im = Image.open(p).convert('RGB')
+                      usable += 1
+                      im.save(stage / f'{usable:02d}.jpg', 'JPEG', quality=94, optimize=True, progressive=True)
                   except Exception as e:
-                      print('image conversion failed',p,e)
+                      print(f'[{slug}] image conversion failed: {p}: {e}')
 
-              if count==0:
-                  return 0
+              if usable == 0:
+                  return {'status':'FAILED_OR_EMPTY', 'downloaded':len(files), 'usable':0, 'stdout':stdout, 'stderr':stderr}
 
-              if out.exists(): shutil.rmtree(out)
+              out = gallery_root / slug
+              if out.exists():
+                  shutil.rmtree(out)
               stage.rename(out)
-              return count
+              return {'status':'OK', 'downloaded':len(files), 'usable':usable, 'stdout':stdout, 'stderr':stderr}
 
-          for slug,(url,credits) in galleries.items():
-              count=sync_gallery(url,slug)
-              json_path=gallery_root/f'{slug}.json'
-              if count>0:
-                  photos=[{'src':f'assets/galleries/{slug}/{i:02d}.jpg','name':f'{i:02d}'} for i in range(1,min(count,8)+1)]
-                  payload={'photos':photos,'credits':credits,'sourceFolder':url,'warning':None}
-                  json_path.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-                  print(f'[{slug}] synchronized {count} images')
+          for slug, (url, credits) in galleries.items():
+              result = sync_gallery(url, slug)
+              results[slug] = result
+              json_path = gallery_root / f'{slug}.json'
+
+              if result['usable'] > 0:
+                  total = min(result['usable'], max_display)
+                  photos = [
+                      {'src':f'assets/galleries/{slug}/{i:02d}.jpg', 'name':f'{i:02d}'}
+                      for i in range(1, total + 1)
+                  ]
+                  payload = {
+                      'photos': photos,
+                      'credits': credits,
+                      'sourceFolder': url,
+                      'warning': None,
+                      'importedCount': result['usable']
+                  }
+                  json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
               else:
-                  print(f'[{slug}] download failed or empty; preserving existing gallery files')
+                  # Preserve the last known good gallery; do not destroy it because Drive was unavailable.
+                  print(f'[{slug}] Drive unavailable or empty; preserving existing gallery files')
 
-          covers={
-            'unreal-the-grid':'https://imgproxy.ra.co/_/quality:66/aHR0cHM6Ly9pbWFnZXMucmEuY28vZjg3ZmU1MjM5ZTg3MzA0ZjkzZWQ2NDA1MjE3NzNlNWFmODY1NjMxOS5qcGc=',
-            'the-grid-outworld':'https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg',
-            'adriatique-x-sao-paulo':'https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg',
-            'crochestra-brasil':'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10',
-            'music-on-sao-paulo':'https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp',
-            'one-life-sao-paulo':'https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg'
+          labels = {
+            'music-on-sao-paulo':'Music On',
+            'one-life-sao-paulo':'One Life',
+            'the-grid-outworld':'The Grid',
+            'adriatique-x-sao-paulo':'Adriatique',
+            'crochestra-brasil':'Crochestra'
           }
-          import urllib.request
-          for slug,url in covers.items():
-              ext='.webp' if '.webp' in url.lower() else '.jpg'
-              dest=cover_root/f'{slug}{ext}'
-              if dest.exists() and dest.stat().st_size>10000:
+
+          report.append('# Diagnóstico de sincronização do Google Drive')
+          report.append('')
+          report.append(f'Importação máxima: **{max_import} fotos por evento**; limite de exibição cadastrado: **{max_display}**.')
+          report.append('')
+          report.append('| Evento | Resultado | Arquivos encontrados | Imagens processadas |')
+          report.append('|---|---|---:|---:|')
+          for slug, result in results.items():
+              report.append(f"| {labels[slug]} | {result['status']} | {result['downloaded']} | {result['usable']} |")
+          report.append('')
+          report.append('## Interpretação')
+          report.append('- **OK**: a pasta foi acessada e as imagens foram processadas.')
+          report.append('- **FAILED_OR_EMPTY**: o GitHub Actions não conseguiu obter imagens acessíveis da pasta nesta execução; a galeria anterior foi preservada.')
+          report.append('')
+
+          (root / 'drive-sync-report.md').write_text('\n'.join(report) + '\n', encoding='utf-8')
+
+          summary = []
+          summary.append('## Resultado da sincronização do Drive')
+          for slug, result in results.items():
+              summary.append(f"- **{labels[slug]}**: `{result['status']}` — {result['downloaded']} arquivos encontrados, {result['usable']} processados.")
+          summary.append('')
+          summary.append('Relatório completo: `drive-sync-report.md`')
+          pathlib.Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary) + '\n', encoding='utf-8')
+
+          # Keep the existing verified local cover images and fix known extensions.
+          index = root / 'index.html'
+          event = root / 'event.html'
+          for p in [index, event]:
+              if not p.exists():
                   continue
-              try:
-                  req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-                  with urllib.request.urlopen(req,timeout=30) as r, open(dest,'wb') as f:
-                      shutil.copyfileobj(r,f)
-                  print('cover saved',dest)
-              except Exception as e:
-                  print('cover download failed',slug,e)
-
-          index=root/'index.html'
-          if index.exists():
-              s=index.read_text(encoding='utf-8')
-              replacements={
-                covers['unreal-the-grid']:'assets/covers/unreal-the-grid.jpg',
-                covers['the-grid-outworld']:'assets/covers/the-grid-outworld.jpg',
-                covers['adriatique-x-sao-paulo']:'assets/covers/adriatique-x-sao-paulo.jpg',
-                covers['crochestra-brasil']:'assets/covers/crochestra-brasil.jpg',
-                covers['music-on-sao-paulo']:'assets/covers/music-on-sao-paulo.webp',
-                covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
-              }
-              for old,new in replacements.items(): s=s.replace(old,new)
-              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo']:
-                  s=s.replace(f'assets/covers/{slug}.webp',f'assets/covers/{slug}.jpg')
-              s=s.replace('assets/covers/unreal-the-grid.webp','assets/covers/unreal-the-grid.jpg')
-              index.write_text(s,encoding='utf-8')
-
-          event=root/'event.html'
-          if event.exists():
-              s=event.read_text(encoding='utf-8')
-              replacements={
-                covers['unreal-the-grid']:'assets/covers/unreal-the-grid.jpg',
-                covers['the-grid-outworld']:'assets/covers/the-grid-outworld.jpg',
-                covers['adriatique-x-sao-paulo']:'assets/covers/adriatique-x-sao-paulo.jpg',
-                covers['crochestra-brasil']:'assets/covers/crochestra-brasil.jpg',
-                covers['music-on-sao-paulo']:'assets/covers/music-on-sao-paulo.webp',
-                covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
-              }
-              for old,new in replacements.items(): s=s.replace(old,new)
-              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo']:
-                  s=s.replace(f'assets/covers/{slug}.webp',f'assets/covers/{slug}.jpg')
-              s=s.replace('assets/covers/unreal-the-grid.webp','assets/covers/unreal-the-grid.jpg')
-              s=s.replace('<p data-t="photoText">Galeria premium com até 8 fotos selecionadas. Toque ou clique em uma foto para abrir em tela cheia.</p>','')
-              s=s.replace("grid.innerHTML='<div class=\\\"gallery-empty\\\">As fotos desta galeria estão sendo preparadas.</div>';credit.innerHTML='';return", "grid.innerHTML='';credit.innerHTML='';document.getElementById('gallery').style.display='none';return")
-              s=s.replace("{label:'Tim Buiting',instagram:null,icon:'📷'}", "{label:'@pedrofatore_',instagram:'https://www.instagram.com/pedrofatore_/',icon:'📷'}")
-              event.write_text(s,encoding='utf-8')
-
-          print('sync revision',os.environ.get('SYNC_REVISION'))
+              s = p.read_text(encoding='utf-8')
+              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo','unreal-the-grid']:
+                  s = s.replace(f'assets/covers/{slug}.webp', f'assets/covers/{slug}.jpg')
+              p.write_text(s, encoding='utf-8')
           PY
 
-      - name: Apply visual readability refinements
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          for name in ['index.html','event.html']:
-              p=Path(name)
-              s=p.read_text(encoding='utf-8')
-              if name=='index.html':
-                  css='''<style id="beon-fix-image-v5">\nbody{font-size:16px}.amb-wrap{padding-bottom:6px}.hero{padding-top:18px}.hero .ey{margin-top:0;font-size:11px}.hero p{font-size:15px;line-height:1.7}.head p{font-size:14px}.box h3,.card h3{font-size:16px}.box p,.meta{font-size:13px;line-height:1.6}.loc,.buy{font-size:12px;padding:11px}.pic{height:250px}.pic img{image-rendering:auto;object-fit:contain}.profile p{font-size:13px}.profile .links a{font-size:12px}.footer-intro{font-size:13px}@media(max-width:760px){.amb-wrap{padding-bottom:4px}.hero{padding-top:12px}.hero p{font-size:14px}.box p,.meta{font-size:13px}.cards .pic{height:240px}.profile p{font-size:13px}}\n</style>'''
-              else:
-                  css='''<style id="beon-fix-image-v5">\nbody{font-size:16px}.lead{font-size:14px}.detail small{font-size:10px}.detail strong{font-size:14px}.btn{font-size:12px;padding:12px}.gallery>p{display:none}.beon-gallery-credit{font-size:12px}.gallery h2{font-size:33px}@media(max-width:760px){.lead{font-size:14px}.detail strong{font-size:14px}.beon-gallery-credit{font-size:12px}}\n</style>'''
-              if 'beon-fix-image-v5' not in s: s=s.replace('</head>',css+'</head>',1)
-              p.write_text(s,encoding='utf-8')
-          PY
-
-      - name: Commit repaired galleries and visuals
+      - name: Commit synchronization results and diagnostics
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html event.html assets/galleries assets/covers
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "fix: restore galleries and image loading [drive-gallery-sync]"
+          git add assets/galleries drive-sync-report.md index.html event.html
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "sync: import up to 20 Drive photos and publish diagnostics [drive-gallery-sync]"
           git push
