@@ -1,91 +1,10 @@
 {
   "photos": [
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/01.jpg",
-      "name": "01"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/02.jpg",
-      "name": "02"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/03.jpg",
-      "name": "03"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/04.jpg",
-      "name": "04"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/05.jpg",
-      "name": "05"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/06.jpg",
-      "name": "06"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/07.jpg",
-      "name": "07"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/08.jpg",
-      "name": "08"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/09.jpg",
-      "name": "09"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/10.jpg",
-      "name": "10"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/11.jpg",
-      "name": "11"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/12.jpg",
-      "name": "12"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/13.jpg",
-      "name": "13"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/14.jpg",
-      "name": "14"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/15.jpg",
-      "name": "15"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/16.jpg",
-      "name": "16"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/17.jpg",
-      "name": "17"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/18.jpg",
-      "name": "18"
-    }
+    {"src":"assets/galleries/adriatique-x-sao-paulo/01.jpg","name":"01"},{"src":"assets/galleries/adriatique-x-sao-paulo/02.jpg","name":"02"},{"src":"assets/galleries/adriatique-x-sao-paulo/03.jpg","name":"03"},{"src":"assets/galleries/adriatique-x-sao-paulo/04.jpg","name":"04"},{"src":"assets/galleries/adriatique-x-sao-paulo/05.jpg","name":"05"},{"src":"assets/galleries/adriatique-x-sao-paulo/06.jpg","name":"06"},{"src":"assets/galleries/adriatique-x-sao-paulo/07.jpg","name":"07"},{"src":"assets/galleries/adriatique-x-sao-paulo/08.jpg","name":"08"},{"src":"assets/galleries/adriatique-x-sao-paulo/09.jpg","name":"09"},{"src":"assets/galleries/adriatique-x-sao-paulo/10.jpg","name":"10"},{"src":"assets/galleries/adriatique-x-sao-paulo/11.jpg","name":"11"},{"src":"assets/galleries/adriatique-x-sao-paulo/12.jpg","name":"12"},{"src":"assets/galleries/adriatique-x-sao-paulo/13.jpg","name":"13"},{"src":"assets/galleries/adriatique-x-sao-paulo/14.jpg","name":"14"},{"src":"assets/galleries/adriatique-x-sao-paulo/15.jpg","name":"15"},{"src":"assets/galleries/adriatique-x-sao-paulo/16.jpg","name":"16"},{"src":"assets/galleries/adriatique-x-sao-paulo/17.jpg","name":"17"},{"src":"assets/galleries/adriatique-x-sao-paulo/18.jpg","name":"18"}
   ],
-  "credits": [
-    {
-      "label": "BeOn Entertainment",
-      "instagram": "https://www.instagram.com/beonentertainment/",
-      "icon": "📷"
-    },
-    {
-      "label": "@pedrofatore_",
-      "instagram": "https://www.instagram.com/pedrofatore_/",
-      "icon": "📷"
-    }
-  ],
-  "sourceFolder": "https://drive.google.com/drive/folders/1ZSApcvWB5NM_SwFd_2PwgK_sU6fH4HAR?usp=sharing",
-  "warning": null,
-  "importedCount": 18
+  "credits":[{"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/","icon":"📷"},{"label":"@pedrofatore_","instagram":"https://www.instagram.com/pedrofatore_/","icon":"📷"}],
+  "sourceFolder":"https://drive.google.com/drive/folders/1ZSApcvWB5NM_SwFd_2PwgK_sU6fH4HAR?usp=sharing",
+  "warning":null,
+  "importedCount":18,
+  "thumbnailLimit":8
 }
