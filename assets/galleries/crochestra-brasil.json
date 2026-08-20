@@ -1,6 +1,40 @@
 {
-  "photos": [],
+  "photos": [
+    {
+      "src": "assets/galleries/crochestra-brasil/01.jpg",
+      "name": "01"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/02.jpg",
+      "name": "02"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/03.jpg",
+      "name": "03"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/04.jpg",
+      "name": "04"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/05.jpg",
+      "name": "05"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/06.jpg",
+      "name": "06"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/07.jpg",
+      "name": "07"
+    },
+    {
+      "src": "assets/galleries/crochestra-brasil/08.jpg",
+      "name": "08"
+    }
+  ],
   "credits": [],
-  "sourceFolder": "https://drive.google.com/drive/folders/1QixvAOaAHKh5Vp91GyrDCWmHQG6l6jhz?usp=drive_link",
-  "warning": "Nenhuma foto acessível nesta sincronização."
+  "sourceFolder": "https://drive.google.com/drive/folders/1GLIzv4CL_uxEsY7GlNGuYvxr1VeeqXkQ?usp=sharing",
+  "warning": null,
+  "importedCount": 8
 }
