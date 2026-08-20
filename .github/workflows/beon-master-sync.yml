@@ -7,6 +7,7 @@ on:
     paths:
       - 'profile-config.json'
       - '.github/workflows/beon-master-sync.yml'
+      - 'index.html'
 
 permissions:
   contents: write
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   profile:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-sync]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-layout]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,7 +26,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Aplicar perfil e centralizar apresentação
+      - name: Reposicionar a foto existente sem alterar o arquivo
         shell: python
         run: |
           import json
@@ -38,50 +39,53 @@ jobs:
           p = root / 'index.html'
           html = p.read_text(encoding='utf-8')
 
-          html = re.sub(r'<style id="beon-no-profile-photo">.*?</style>\s*', '', html, flags=re.S)
-          html = re.sub(r'<style id="beon-profile-layout-final">.*?</style>\s*', '', html, flags=re.S)
+          # Remover somente a imagem do bloco superior.
+          html = re.sub(
+              r'<div\s+class=["\']amb-photo["\'][^>]*>.*?</div>\s*',
+              '', html, count=1, flags=re.I | re.S
+          )
 
-          if 'class="amb-photo"' not in html:
-              html, n = re.subn(
-                  r'(<div class="hero-inner">)\s*(<div class="amb-copy">)',
-                  r'\1\n<div class="amb-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="eager" fetchpriority="high" decoding="async"></div>\n\2',
-                  html, count=1, flags=re.S)
-              if n != 1:
-                  raise SystemExit('Estrutura hero-inner não encontrada.')
-          else:
-              html = re.sub(
-                  r'(<div class="amb-photo"><img[^>]*src=")[^"]*("[^>]*>\s*</div>)',
-                  r'\1' + image_url + r'\2', html, count=1, flags=re.S)
+          # O topo continua com as mesmas informações, centralizadas e sem foto.
+          top_style = '''\n<style id="beon-profile-top-no-photo">\n.hero-inner{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:20px!important}\n.amb-copy{width:100%!important;max-width:900px!important;display:flex!important;flex-direction:column!important;align-items:center!important}\n</style>\n'''
+          html = re.sub(r'<style\s+id=["\']beon-profile-top-no-photo["\']>.*?</style>\s*', '', html, flags=re.I | re.S)
+          html = re.sub(r'</head>', top_style + '</head>', html, count=1, flags=re.I)
 
+          # Na apresentação inferior, manter a mesma foto existente ao lado do texto.
           if 'class="ambassador-bottom-card"' in html:
               if 'class="ambassador-bottom-photo"' not in html:
-                  html, n = re.subn(
-                      r'(<div class="ambassador-bottom-card">)\s*(<div class="ambassador-bottom-copy">)',
-                      r'\1\n<div class="ambassador-bottom-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="lazy" decoding="async"></div>\n\2',
-                      html, count=1, flags=re.S)
-                  if n != 1:
-                      raise SystemExit('Apresentação inferior não encontrada.')
+                  html, inserted = re.subn(
+                      r'(<div\s+class=["\']ambassador-bottom-card["\'][^>]*>\s*)(<div\s+class=["\']ambassador-bottom-copy["\'])',
+                      r'\1<div class="ambassador-bottom-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="lazy" decoding="async"></div>\n\2',
+                      html, count=1, flags=re.I | re.S
+                  )
+                  if inserted != 1:
+                      raise SystemExit('Não foi possível localizar a apresentação inferior.')
               else:
                   html = re.sub(
-                      r'(<div class="ambassador-bottom-photo"><img[^>]*src=")[^"]*("[^>]*>\s*</div>)',
-                      r'\1' + image_url + r'\2', html, count=1, flags=re.S)
+                      r'(<div\s+class=["\']ambassador-bottom-photo["\'][^>]*>\s*<img[^>]*src=["\'])[^"\']*("[^>]*>\s*</div>)',
+                      r'\1' + image_url + r'\2', html, count=1, flags=re.I | re.S
+                  )
 
-          style = '''\n<style id="beon-profile-layout-final">\n.hero-inner{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:20px!important}\n.amb-photo{width:min(220px,42vw)!important;margin:0 auto!important}\n.amb-photo img{display:block!important;width:100%!important;height:auto!important;aspect-ratio:3/4!important;object-fit:cover!important;border-radius:22px!important}\n.amb-copy{width:100%!important;max-width:900px!important;display:flex!important;flex-direction:column!important;align-items:center!important}\n.ambassador-bottom-card{grid-template-columns:1fr!important;text-align:center!important;justify-items:center!important}\n.ambassador-bottom-photo img{display:block!important;margin:0 auto!important;width:min(220px,42vw)!important;height:auto!important;aspect-ratio:3/4!important;object-fit:cover!important}\n.ambassador-bottom-copy{width:100%!important;max-width:900px!important}\n@media(max-width:700px){.amb-photo,.ambassador-bottom-photo img{width:min(210px,68vw)!important}}\n</style>\n'''
-          html = re.sub(r'</head>', style + '</head>', html, count=1, flags=re.I)
+          bottom_style = '''\n<style id="beon-profile-bottom-side-by-side">\n.ambassador-bottom-card{grid-template-columns:240px minmax(0,1fr)!important;gap:28px!important;align-items:center!important;text-align:left!important}\n.ambassador-bottom-photo{display:flex!important;justify-content:center!important;align-items:center!important}\n.ambassador-bottom-photo img{display:block!important;width:220px!important;height:300px!important;object-fit:cover!important;border-radius:18px!important;border:1px solid #3fe0d088!important;box-shadow:0 0 0 1px #7c5cff22,0 0 38px #7c5cff18!important}\n.ambassador-bottom-copy{width:100%!important;max-width:none!important}\n@media(max-width:700px){.ambassador-bottom-card{grid-template-columns:1fr!important;text-align:center!important}.ambassador-bottom-photo img{width:min(220px,70vw)!important;height:auto!important;aspect-ratio:3/4!important}.ambassador-bottom-copy{max-width:900px!important;margin:auto!important}}\n</style>\n'''
+          html = re.sub(r'<style\s+id=["\']beon-profile-bottom-side-by-side["\']>.*?</style>\s*', '', html, flags=re.I | re.S)
+          html = re.sub(r'</head>', bottom_style + '</head>', html, count=1, flags=re.I)
+
           p.write_text(html, encoding='utf-8')
-          print(image_url)
+          print('Foto reposicionada: topo sem imagem; apresentação inferior com a mesma imagem ao lado do texto.')
 
       - name: Validar
         run: |
+          grep -F 'beon-profile-top-no-photo' index.html
+          grep -F 'beon-profile-bottom-side-by-side' index.html
+          grep -F 'ambassador-bottom-photo' index.html
           grep -F 'drive.google.com/thumbnail?id=1vrISCF_6pWFQAlOg6PabIOP9k3X6R4nM' index.html
-          grep -F 'beon-profile-layout-final' index.html
-          grep -F 'amb-photo' index.html
+          ! grep -F '<div class="amb-photo">' index.html
 
       - name: Publicar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html profile-config.json .github/workflows/beon-master-sync.yml
+          git add index.html .github/workflows/beon-master-sync.yml
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'sync: aplicar foto de perfil e centralizar apresentação [beon-profile-sync]'
+          git commit -m 'fix: deixar foto somente na apresentação inferior [beon-profile-layout]'
           git push
