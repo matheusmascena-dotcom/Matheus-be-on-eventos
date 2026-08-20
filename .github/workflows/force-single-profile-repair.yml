@@ -17,21 +17,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Recover exact uploaded photo from Git history
+      - name: Recover exact uploaded photo from stable Git commit
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p assets
-          PHOTO_WORKFLOW_COMMIT=$(git log --format=%H --all -- '.github/workflows/finalize-profile-presentation.yml' | head -n 1)
-          test -n "$PHOTO_WORKFLOW_COMMIT"
-          git show "$PHOTO_WORKFLOW_COMMIT:.github/workflows/finalize-profile-presentation.yml" > /tmp/finalize-profile.yml
+          PHOTO_URL='https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/356e8f3966b6c392f01399495558da7010053d8b/.github/workflows/finalize-profile-presentation.yml'
+          curl -fsSL --retry 4 --connect-timeout 15 --max-time 60 "$PHOTO_URL" -o /tmp/finalize-profile.yml
           python3 - <<'PY'
           from pathlib import Path
           import re, base64
           text=Path('/tmp/finalize-profile.yml').read_text(encoding='utf-8')
           m=re.search(r"cat > /tmp/profile\.b64 <<'B64'\n(.*?)\nB64", text, re.S)
           if not m:
-              raise SystemExit('Exact uploaded profile payload not found in Git history')
+              raise SystemExit('Exact uploaded profile payload not found in stable Git commit')
           raw=base64.b64decode(''.join(m.group(1).split()))
           Path('assets/profile-matheus-uploaded.jpg').write_bytes(raw)
           print('profile bytes:', len(raw))
@@ -49,7 +48,7 @@ jobs:
           instagram='https://www.instagram.com/mat_mascena97/'
           whatsapp='https://w.app/matheusalves-fale-comigo'
 
-          # Only the active top profile image reference changes; event grid/search/favorites/etc. stay untouched.
+          # Only swap the active top profile image; leave event data and current V3 features intact.
           s=re.sub(r'src="(?:profile-photo\.svg|assets/profile-matheus(?:\.svg|\.png|\.jpg)|assets/matheus-profile\.jpg)(?:\?[^\"]*)?"', f'src="{photo}"', s, count=1)
 
           # Rebuild exactly one bottom ambassador presentation.
@@ -63,7 +62,7 @@ jobs:
           if 'id="beon-ambassador-bottom-final"' not in s:
               s=s.replace('</head>',css+'\n</head>',1)
 
-          # Lock contacts to the exact URLs supplied by the owner.
+          # Keep the exact contact URLs already approved by the owner.
           s=re.sub(r'href="https://www\.instagram\.com/[^"]*"', f'href="{instagram}"', s)
           s=re.sub(r'href="(?:https://wa\.me/[^\"]*|https://w\.app/[^\"]*)"', f'href="{whatsapp}"', s)
           p.write_text(s,encoding='utf-8')
@@ -83,7 +82,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm -f .github/workflows/force-single-profile-repair.yml || true
+          git rm -f .github/workflows/force-single-profile-repair.yml
           git add index.html assets/profile-matheus-uploaded.jpg
           git commit -m 'fix: publish exact profile photo and restore bottom presentation [single-profile-repair]'
           git push
