@@ -1,5 +1,6 @@
 {
   "event": "Music On",
+  "sourceFolder": "https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing",
   "photos": [
     {"src":"assets/galleries/music-on-sao-paulo/01.jpg","name":"IMG_2808"},
     {"src":"assets/galleries/music-on-sao-paulo/02.jpg","name":"IMG_2874"},
