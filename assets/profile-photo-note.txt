@@ -1,1 +1,0 @@
-A foto enviada nesta conversa deve ser usada como a foto da apresentação. A automação de restauração mantém a referência local `profile-photo.svg` até que o binário seja versionado no repositório.
