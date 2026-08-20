@@ -33,13 +33,25 @@ footer{border-top:1px solid var(--line);padding:35px 0 105px;color:var(--muted);
 .ambassador-bottom-copy{width:100%!important;max-width:900px!important}
 @media(max-width:700px){.amb-photo,.ambassador-bottom-photo img{width:min(210px,68vw)!important}}
 </style>
+
+<style id="beon-profile-top-no-photo">
+.hero-inner{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:20px!important}
+.amb-copy{width:100%!important;max-width:900px!important;display:flex!important;flex-direction:column!important;align-items:center!important}
+</style>
+
+<style id="beon-profile-bottom-side-by-side">
+.ambassador-bottom-card{grid-template-columns:240px minmax(0,1fr)!important;gap:28px!important;align-items:center!important;text-align:left!important}
+.ambassador-bottom-photo{display:flex!important;justify-content:center!important;align-items:center!important}
+.ambassador-bottom-photo img{display:block!important;width:220px!important;height:300px!important;object-fit:cover!important;border-radius:18px!important;border:1px solid #3fe0d088!important;box-shadow:0 0 0 1px #7c5cff22,0 0 38px #7c5cff18!important}
+.ambassador-bottom-copy{width:100%!important;max-width:none!important}
+@media(max-width:700px){.ambassador-bottom-card{grid-template-columns:1fr!important;text-align:center!important}.ambassador-bottom-photo img{width:min(220px,70vw)!important;height:auto!important;aspect-ratio:3/4!important}.ambassador-bottom-copy{max-width:900px!important;margin:auto!important}}
+</style>
 </head>
 <body>
 <header><div class="wrap nav"><a class="brand" href="#top"><i class="dot"></i>BE·ON</a><div class="header-right"><div class="live-clock" id="liveClock" aria-live="polite">Agora · --</div><div class="pill">5% OFF · <b>MATHEUSMASCENA</b></div><a class="pill" href="?admin=1">Admin</a></div></div></header>
 <main id="top">
 <section class="hero wrap">
 <div class="hero-inner">
-<div class="amb-photo"><img src="https://drive.google.com/thumbnail?id=1vrISCF_6pWFQAlOg6PabIOP9k3X6R4nM&sz=w1200" alt="Matheus Alves Mascena" loading="eager" fetchpriority="high" decoding="async"></div>
 <div class="amb-copy">
 <span class="eyebrow">Matheus Alves Mascena · Embaixador Be-On</span>
 <h2>Matheus Alves Mascena</h2>
