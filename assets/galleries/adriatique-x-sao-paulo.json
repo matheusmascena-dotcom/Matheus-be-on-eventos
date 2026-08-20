@@ -1,34 +1,14 @@
 {
   "event": "X São Paulo",
   "photos": [
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/01.jpg",
-      "name": "02"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/02.jpg",
-      "name": "01"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/03.jpg",
-      "name": "04"
-    },
-    {
-      "src": "assets/galleries/adriatique-x-sao-paulo/04.jpg",
-      "name": "03"
-    }
+    {"src":"assets/galleries/adriatique-x-sao-paulo/01.jpg","name":"02"},
+    {"src":"assets/galleries/adriatique-x-sao-paulo/02.jpg","name":"01"},
+    {"src":"assets/galleries/adriatique-x-sao-paulo/03.jpg","name":"04"},
+    {"src":"assets/galleries/adriatique-x-sao-paulo/04.jpg","name":"03"}
   ],
   "credits": [
-    {
-      "label": "BeOn Entertainment",
-      "instagram": "https://www.instagram.com/beonentertainment/",
-      "icon": "📷"
-    },
-    {
-      "label": "Tim Buiting",
-      "instagram": null,
-      "icon": "📷"
-    }
+    {"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/","icon":"📷"},
+    {"label":"Tim Buiting","instagram":null,"icon":"📷"}
   ],
-  "warning": "Galeria Adriatique restaurada da versão anterior do site porque os arquivos do Drive não puderam ser baixados."
+  "warning": null
 }
