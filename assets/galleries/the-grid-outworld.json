@@ -1,45 +1,18 @@
 {
   "event": "The Grid: Outworld by Klang",
   "photos": [
-    {
-      "src": "assets/galleries/the-grid-outworld/01.jpg",
-      "name": "281_@pedrofatore_FAT_0983"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/02.jpg",
-      "name": "213_@pedrofatore_FAT_0278"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/03.jpg",
-      "name": "208_@pedrofatore_FAT_0230"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/04.jpg",
-      "name": "272_@pedrofatore_FAT_0952"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/05.jpg",
-      "name": "206_@pedrofatore_FAT_0198"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/06.jpg",
-      "name": "48_@pedrofatore_FAT_8971"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/07.jpg",
-      "name": "279_@pedrofatore_FAT_0977"
-    },
-    {
-      "src": "assets/galleries/the-grid-outworld/08.jpg",
-      "name": "118_@pedrofatore_FAT_9604"
-    }
+    {"src":"assets/galleries/the-grid-outworld/01.jpg","name":"281_@pedrofatore_FAT_0983"},
+    {"src":"assets/galleries/the-grid-outworld/02.jpg","name":"213_@pedrofatore_FAT_0278"},
+    {"src":"assets/galleries/the-grid-outworld/03.jpg","name":"208_@pedrofatore_FAT_0230"},
+    {"src":"assets/galleries/the-grid-outworld/04.jpg","name":"272_@pedrofatore_FAT_0952"},
+    {"src":"assets/galleries/the-grid-outworld/05.jpg","name":"206_@pedrofatore_FAT_0198"},
+    {"src":"assets/galleries/the-grid-outworld/06.jpg","name":"48_@pedrofatore_FAT_8971"},
+    {"src":"assets/galleries/the-grid-outworld/07.jpg","name":"279_@pedrofatore_FAT_0977"},
+    {"src":"assets/galleries/the-grid-outworld/08.jpg","name":"118_@pedrofatore_FAT_9604"}
   ],
   "credits": [
-    {
-      "label": "BeOn Entertainment",
-      "instagram": "https://www.instagram.com/beonentertainment/",
-      "icon": "📷"
-    }
+    {"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/","icon":"📷"},
+    {"label":"@pedrofatore_","instagram":"https://www.instagram.com/pedrofatore_/","icon":"📷"}
   ],
-  "warning": "Foram encontradas 26 foto(s) acessíveis; 8 foram selecionadas de 8 solicitadas."
+  "warning": null
 }
