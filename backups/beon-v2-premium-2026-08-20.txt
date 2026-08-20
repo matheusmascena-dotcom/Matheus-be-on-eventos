@@ -1,0 +1,21 @@
+BE·ON V2 PREMIUM — BACKUP / RELEASE NOTE
+Data: 20/08/2026
+Branch: beon-v2-premium
+
+Implementado:
+- Landing premium com hero cinematográfico, glow, partículas e microanimações.
+- Cards de eventos com hover/tilt 3D e bordas iluminadas.
+- Apresentação do Matheus com foto, Instagram, WhatsApp e cupom MATHEUSMASCENA / 5% OFF.
+- Galeria de eventos com até 8 fotos, créditos profissionais e lightbox fullscreen.
+- Navegação por setas e swipe no celular.
+- Remoção dos avisos de quantidade de fotos.
+- Adriatique preservado com fallback local para a galeria caso a fonte externa falhe.
+- Barra flutuante deixada preparada e não ativada, conforme roadmap.
+
+Arquivos principais alterados:
+- index.html
+- event.html
+- assets/galleries/the-grid-outworld.json
+- assets/galleries/adriatique-x-sao-paulo.json
+- assets/galleries/music-on-sao-paulo.json
+- assets/galleries/one-life-sao-paulo.json
