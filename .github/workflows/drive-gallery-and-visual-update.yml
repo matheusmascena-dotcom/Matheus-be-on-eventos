@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  SYNC_REVISION: '2026-08-20-card-fix-2'
+
 jobs:
   sync:
     if: ${{ !contains(github.event.head_commit.message, '[drive-gallery-sync]') }}
@@ -86,7 +89,6 @@ jobs:
                   try:
                       im=Image.open(p).convert('RGB')
                       count+=1
-                      # Preserve visual quality while ensuring GitHub Pages-friendly JPEGs.
                       im.save(stage/f'{count:02d}.jpg', 'JPEG', quality=94, optimize=True, progressive=True)
                   except Exception as e:
                       print('image conversion failed',p,e)
@@ -109,7 +111,6 @@ jobs:
               else:
                   print(f'[{slug}] download failed or empty; preserving existing gallery files')
 
-          # Keep existing verified local card covers. Download replacements only when successful.
           covers={
             'unreal-the-grid':'https://imgproxy.ra.co/_/quality:66/aHR0cHM6Ly9pbWFnZXMucmEuY28vZjg3ZmU1MjM5ZTg3MzA0ZjkzZWQ2NDA1MjE3NzNlNWFmODY1NjMxOS5qcGc=',
             'the-grid-outworld':'https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg',
@@ -131,7 +132,7 @@ jobs:
                   print('cover saved',dest)
               except Exception as e:
                   print('cover download failed',slug,e)
-          
+
           index=root/'index.html'
           if index.exists():
               s=index.read_text(encoding='utf-8')
@@ -144,6 +145,9 @@ jobs:
                 covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
               }
               for old,new in replacements.items(): s=s.replace(old,new)
+              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo']:
+                  s=s.replace(f'assets/covers/{slug}.webp',f'assets/covers/{slug}.jpg')
+              s=s.replace('assets/covers/unreal-the-grid.webp','assets/covers/unreal-the-grid.jpg')
               index.write_text(s,encoding='utf-8')
 
           event=root/'event.html'
@@ -158,10 +162,15 @@ jobs:
                 covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
               }
               for old,new in replacements.items(): s=s.replace(old,new)
+              for slug in ['the-grid-outworld','adriatique-x-sao-paulo','crochestra-brasil','one-life-sao-paulo']:
+                  s=s.replace(f'assets/covers/{slug}.webp',f'assets/covers/{slug}.jpg')
+              s=s.replace('assets/covers/unreal-the-grid.webp','assets/covers/unreal-the-grid.jpg')
               s=s.replace('<p data-t="photoText">Galeria premium com até 8 fotos selecionadas. Toque ou clique em uma foto para abrir em tela cheia.</p>','')
               s=s.replace("grid.innerHTML='<div class=\\\"gallery-empty\\\">As fotos desta galeria estão sendo preparadas.</div>';credit.innerHTML='';return", "grid.innerHTML='';credit.innerHTML='';document.getElementById('gallery').style.display='none';return")
               s=s.replace("{label:'Tim Buiting',instagram:null,icon:'📷'}", "{label:'@pedrofatore_',instagram:'https://www.instagram.com/pedrofatore_/',icon:'📷'}")
               event.write_text(s,encoding='utf-8')
+
+          print('sync revision',os.environ.get('SYNC_REVISION'))
           PY
 
       - name: Apply visual readability refinements
