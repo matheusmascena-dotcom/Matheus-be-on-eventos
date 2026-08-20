@@ -15,3 +15,5 @@ for name in ('index.html','event.html'):
         s=s.replace('</body>',JS+'</body>',1);p.write_text(s,encoding='utf-8')
 # v3-ready marker
 Path('scripts/beon-v3-patch.py').write_text(Path(__file__).read_text(encoding='utf-8')+'\n# v3-ready\n',encoding='utf-8')
+
+# v3-ready
