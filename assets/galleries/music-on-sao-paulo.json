@@ -1,12 +1,18 @@
 {
-  "photos": [],
-  "credits": [
-    {
-      "label": "@clickdoclayton",
-      "instagram": "https://www.instagram.com/clickdoclayton/",
-      "icon": "📷"
-    }
+  "photos": [
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/01.jpg","name":"IMG_2808"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/02.jpg","name":"IMG_2874"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/03.jpg","name":"IMG_2758"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/04.jpg","name":"100_@ClickdoClayton_7502"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/05.jpg","name":"FAT_1949"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/06.jpg","name":"219_@ClickdoClayton_"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/07.jpg","name":"FAT_2651"},
+    {"src":"https://raw.githubusercontent.com/matheusmascena-dotcom/Matheus-be-on-eventos/f8f4f132dd4c8b0f1c0d4594b1b6ce75f76a385b/assets/galleries/music-on-sao-paulo/08.jpg","name":"14_@ClickdoClayton_"}
   ],
-  "sourceFolder": "https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing",
-  "warning": "Nenhuma foto acessível nesta sincronização."
+  "credits":[
+    {"label":"BeOn Entertainment","instagram":"https://www.instagram.com/beonentertainment/","icon":"📷"},
+    {"label":"@clickdoclayton","instagram":"https://www.instagram.com/clickdoclayton/","icon":"📷"}
+  ],
+  "sourceFolder":"https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing",
+  "warning":null
 }
