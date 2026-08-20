@@ -1,51 +1,10 @@
-name: Apply site enhancements
+name: Legacy site enhancements (disabled)
+
 on:
-  push:
-    paths:
-      - '.github/workflows/site-enhancements.yml'
-      - 'index.html'
-permissions:
-  contents: write
+  workflow_dispatch:
+
 jobs:
-  enhance:
-    if: ${{ !contains(github.event.head_commit.message, '[site-enhanced]') }}
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Apply requested site updates
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('<div class="coupon-pill">5% OFF · <b>MATHEUSMASCENA</b></div>', '<div class="header-right"><div class="live-clock" id="liveClock" aria-live="polite"></div><div class="coupon-pill">5% OFF · <b>MATHEUSMASCENA</b></div></div>')
-          marker='  @media (max-width: 860px){.steps, .events-grid, .why-grid{grid-template-columns:1fr 1fr;}}'
-          css='''  .header-right{display:flex;align-items:center;gap:12px}.live-clock{font-size:10px;color:var(--cyan);letter-spacing:.05em;text-align:right;white-space:nowrap}.next-event{max-width:760px;margin:8px auto 0;border:1px solid rgba(124,92,255,.35);border-radius:20px;overflow:hidden;background:linear-gradient(135deg,rgba(124,92,255,.12),rgba(255,47,146,.06) 55%,rgba(8,6,13,.9));box-shadow:0 20px 60px rgba(0,0,0,.35),0 0 45px rgba(124,92,255,.12);display:grid;grid-template-columns:180px 1fr;text-align:left}.next-event img{width:100%;height:100%;min-height:175px;object-fit:cover;display:block}.next-copy{padding:20px 22px;display:flex;flex-direction:column;justify-content:center;gap:8px}.next-label{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--magenta);font-weight:700}.next-copy h3{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;letter-spacing:.02em}.next-meta{font-size:10.5px;color:var(--muted)}.countdown{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}.countdown-unit{min-width:52px;padding:7px 8px;border:1px solid rgba(63,224,208,.18);border-radius:9px;background:rgba(8,6,13,.45);text-align:center}.countdown-unit b{display:block;font-family:'Bebas Neue',sans-serif;font-size:21px;line-height:1;color:var(--cyan)}.countdown-unit span{display:block;margin-top:2px;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.search-wrap{max-width:760px;margin:0 auto 24px}.event-search{width:100%;padding:14px 17px 14px 44px;border:1px solid rgba(124,92,255,.28);border-radius:14px;background:rgba(8,6,13,.68);color:var(--ink);font:500 12px 'Space Grotesk',sans-serif;outline:none;backdrop-filter:blur(8px)}.event-search:focus{border-color:rgba(63,224,208,.55);box-shadow:0 0 22px rgba(63,224,208,.08)}.event-search::placeholder{color:var(--muted)}.search-icon{position:relative}.search-icon::before{content:'⌕';position:absolute;left:16px;top:10px;color:var(--cyan);font-size:20px;z-index:2}.no-results{display:none;text-align:center;color:var(--muted);font-size:12px;padding:20px}.contact-btn{display:inline-flex;padding:9px 14px;border:1px solid rgba(63,224,208,.28);border-radius:9px;background:linear-gradient(90deg,rgba(63,224,208,.08),rgba(124,92,255,.10));font-size:10.5px;font-weight:700;color:var(--cyan);transition:.15s}.contact-btn:hover{border-color:var(--cyan);color:var(--ink);box-shadow:0 0 18px rgba(63,224,208,.16);transform:translateY(-1px)}\n'''
-          if '.live-clock{' not in s: s=s.replace(marker,css+marker)
-          s=s.replace('Os melhores eventos de música eletrônica de São Paulo em um só lugar, com 5% de desconto automático no ingresso.', 'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <strong>5% OFF</strong> usando o código: MATHEUSMASCENA.')
-          hero_end='</section>\n\n<section class="section wrap">\n  <div class="section-head">\n    <span class="eyebrow">Como funciona</span>'
-          next_html='''</section>\n\n<section class="wrap" aria-label="Próximo evento em destaque">\n  <div class="next-event">\n    <img src="https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg" alt="The Grid: Outworld by Klang">\n    <div class="next-copy">\n      <div class="next-label">🔥 Próximo evento</div>\n      <h3>The Grid: Outworld by Klang</h3>\n      <div class="next-meta">19 de setembro de 2026 · Arca, São Paulo · Klangkuenstler</div>\n      <div class="countdown" id="countdown" aria-live="polite"><div class="countdown-unit"><b id="cdDays">--</b><span>dias</span></div><div class="countdown-unit"><b id="cdHours">--</b><span>horas</span></div><div class="countdown-unit"><b id="cdMinutes">--</b><span>min</span></div><div class="countdown-unit"><b id="cdSeconds">--</b><span>seg</span></div></div>\n      <a class="next-cta buy-btn" href="https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?passkey=MATHEUSMASCENA" target="_blank" rel="noopener">Comprar ingresso</a>\n    </div>\n  </div>\n</section>\n\n<section class="section wrap">\n  <div class="section-head">\n    <span class="eyebrow">Como funciona</span>'''
-          if 'id="countdown"' not in s: s=s.replace(hero_end,next_html)
-          old='  <div class="events-grid">'
-          new='''  <div class="search-wrap search-icon"><input id="eventSearch" class="event-search" type="search" placeholder="Pesquisar por nome ou data (ex.: Grid, 19 set, 2026)" aria-label="Pesquisar eventos por nome ou data"></div>\n  <div class="events-grid" id="eventsGrid">'''
-          if 'id="eventSearch"' not in s: s=s.replace(old,new,1)
-          pairs=[('19 set 2026','The Grid Outworld by Klang 19 set 2026 19/09/2026 2026'),('26 set 2026','Adriatique X São Paulo 26 set 2026 26/09/2026 2026'),('17 out 2026','Crochestra Brasil 17 out 2026 17/10/2026 2026'),('7 nov 2026','Music On São Paulo 7 nov 2026 07/11/2026 2026'),('21 nov 2026','UNREAL The Grid 21 nov 2026 21/11/2026 2026'),('28 nov 2026','One Life SP Michael Bibi 28 nov 2026 28/11/2026 2026')]
-          for date,q in pairs:
-            s=s.replace(f'<div class="card"><div class="card-img"><span class="tag">{date}</span>',f'<div class="card" data-search="{q}"><div class="card-img"><span class="tag">{date}</span>')
-          if 'id="noResults"' not in s: s=s.replace('  </div>\n</section>\n\n<section class="section wrap">\n  <div class="section-head"><span class="eyebrow">Por que comprar aqui</span>','  </div>\n  <div class="no-results" id="noResults">Nenhum evento encontrado. Tente buscar pelo nome ou pela data.</div>\n</section>\n\n<section class="section wrap">\n  <div class="section-head"><span class="eyebrow">Por que comprar aqui</span>',1)
-          s=s.replace('Curadoria de eventos de música eletrônica · Use sempre o código <span class="code-inline">MATHEUSMASCENA</span> para garantir seu desconto.', 'Uma curadoria dos melhores eventos de música eletrônica, com compra oficial diretamente pela plataforma Ingresse e <strong>5% OFF</strong> usando o código: <span class="code-inline">MATHEUSMASCENA</span>.')
-          contact='''      <span class="amb-sep">·</span>\n      <a class="contact-btn" href="https://w.app/matheusalves-fale-comigo" target="_blank" rel="noopener">Fale comigo</a>'''
-          if 'w.app/matheusalves-fale-comigo' not in s: s=s.replace('      <span class="amb-label">Instagram BeOn:</span><a href="https://www.instagram.com/beonentertainment/" target="_blank" rel="noopener">BeOn Entertainment</a>\n    </div>', '      <span class="amb-label">Instagram BeOn:</span><a href="https://www.instagram.com/beonentertainment/" target="_blank" rel="noopener">BeOn Entertainment</a>\n'+contact+'\n    </div>')
-          script='''<script>\n(function(){const clock=document.getElementById('liveClock');function updateClock(){const now=new Date();const date=now.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});const time=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});clock.textContent=date+' · '+time;}updateClock();setInterval(updateClock,1000);const target=new Date('2026-09-19T00:00:00-03:00').getTime();function updateCountdown(){let diff=Math.max(0,target-Date.now());const days=Math.floor(diff/86400000);diff%=86400000;const hours=Math.floor(diff/3600000);diff%=3600000;const mins=Math.floor(diff/60000);const secs=Math.floor(diff/1000)%60;document.getElementById('cdDays').textContent=String(days).padStart(2,'0');document.getElementById('cdHours').textContent=String(hours).padStart(2,'0');document.getElementById('cdMinutes').textContent=String(mins).padStart(2,'0');document.getElementById('cdSeconds').textContent=String(secs).padStart(2,'0');}updateCountdown();setInterval(updateCountdown,1000);const input=document.getElementById('eventSearch'),grid=document.getElementById('eventsGrid'),no=document.getElementById('noResults');input.addEventListener('input',function(){const q=this.value.trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');let visible=0;grid.querySelectorAll('.card').forEach(card=>{const text=(card.dataset.search+' '+card.textContent).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');const ok=!q||text.includes(q);card.style.display=ok?'flex':'none';if(ok)visible++;});no.style.display=visible?'none':'block';});})();\n</script>\n'''
-          if 'id="liveClock"' in s and 'id="cdDays"' in s and 'eventSearch' in s and '<script>\n(function(){const clock=' not in s: s=s.replace('</body>',script+'</body>')
-          s=s.replace('@media (max-width: 560px){\n    .steps, .events-grid, .why-grid{grid-template-columns:1fr;', '@media (max-width: 560px){\n    .header-right{width:100%;justify-content:space-between}.live-clock{font-size:8.5px}.next-event{grid-template-columns:1fr;margin-left:0;margin-right:0}.next-event img{height:190px;min-height:0}.next-copy h3{font-size:27px}.countdown-unit{min-width:48px}.steps, .events-grid, .why-grid{grid-template-columns:1fr;')
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Commit enhancements
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "feat: countdown search live date and contact [site-enhanced]"
-          git push
+      - run: echo "Legacy visual workflow disabled. Final site changes are maintained by the consolidated presentation workflow."
