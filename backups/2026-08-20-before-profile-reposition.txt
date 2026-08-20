@@ -1,0 +1,1 @@
+Backup marker before profile repositioning: preserve current main state. Requested change: remove profile image from top hero and keep the same existing profile image only in the lower presentation, positioned beside the presentation text. Do not modify image file/source.
