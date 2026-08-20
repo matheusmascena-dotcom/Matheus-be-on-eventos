@@ -32,8 +32,8 @@ jobs:
           MUSIC_ON_DRIVE: 'https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing'
           ONE_LIFE_DRIVE: 'https://drive.google.com/drive/folders/11FUlmMiVFobyh8O_FYjaScR9AkXfqkrh?usp=sharing'
           THE_GRID_DRIVE: 'https://drive.google.com/drive/folders/1HL4FvP5ABw9__7yuSHe_DZA1FwANSTEk?usp=sharing'
-          ADRIATIQUE_DRIVE: 'https://drive.google.com/drive/folders/1Cq11QSAfy7gTTgpri4kGjvnJrWcs9nGJ?usp=sharing'
-          CROCHESTRA_DRIVE: 'https://drive.google.com/drive/folders/1QixvAOaAHKh5Vp91GyrDCWmHQG6l6jhz?usp=drive_link'
+          ADRIATIQUE_DRIVE: 'https://drive.google.com/drive/folders/1ZSApcvWB5NM_SwFd_2PwgK_sU6fH4HAR?usp=sharing'
+          CROCHESTRA_DRIVE: 'https://drive.google.com/drive/folders/1GLIzv4CL_uxEsY7GlNGuYvxr1VeeqXkQ?usp=sharing'
         run: |
           python3 - <<'PY'
           import os, json, shutil, subprocess, pathlib
