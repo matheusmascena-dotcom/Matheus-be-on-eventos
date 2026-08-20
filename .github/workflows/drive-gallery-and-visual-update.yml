@@ -89,16 +89,16 @@ jobs:
               except Exception as e:
                   return {'http': 'ERROR', 'content_type': '', 'final_url': url, 'sample': str(e)}
 
-          def sync_gallery(url, slug):
+          def sync_gallery(url, slug, credits):
               probe = http_probe(url)
               tmp = pathlib.Path('/tmp/drive_' + slug)
               if tmp.exists(): shutil.rmtree(tmp)
               tmp.mkdir(parents=True)
 
-              cmd = ['gdown', '--folder', url, '--output', str(tmp), '--remaining-ok']
+              cmd = ['gdown', '--folder', url, '--output', str(tmp)]
               r = subprocess.run(cmd, text=True, capture_output=True)
-              stdout = (r.stdout or '')[-5000:]
-              stderr = (r.stderr or '')[-5000:]
+              stdout = (r.stdout or '')[-6000:]
+              stderr = (r.stderr or '')[-6000:]
 
               files = []
               if r.returncode == 0:
@@ -130,7 +130,7 @@ jobs:
               total = min(usable, max_display)
               payload = {
                   'photos':[{'src':f'assets/galleries/{slug}/{i:02d}.jpg','name':f'{i:02d}'} for i in range(1,total+1)],
-                  'credits': galleries[slug][1],
+                  'credits': credits,
                   'sourceFolder': url,
                   'warning': None,
                   'importedCount': usable
@@ -139,7 +139,7 @@ jobs:
               return {'status':'OK','downloaded':len(files),'usable':usable,'probe':probe,'gdown_exit':r.returncode,'stdout':stdout,'stderr':stderr}
 
           for slug,(url,credits) in galleries.items():
-              results[slug] = sync_gallery(url, slug)
+              results[slug] = sync_gallery(url, slug, credits)
 
           report = [
             '# Diagnóstico de sincronização do Google Drive','',
@@ -155,15 +155,13 @@ jobs:
               if res['stderr']:
                   report += ['- Erro/saída do gdown:', '```text', res['stderr'][-3000:], '```']
               report.append('')
-          report += ['## Interpretação','- **OK** = a pasta foi acessada e as fotos foram importadas.','- **FAILED_OR_EMPTY** = o runner chegou ao link, mas não conseguiu obter arquivos de imagem da pasta.','- Se HTTP for **200** e gdown continuar em 0, o bloqueio está no formato/listagem do Google Drive e não no GitHub Pages.']
+          report += ['## Interpretação','- **OK** = a pasta foi acessada e as fotos foram importadas.','- **FAILED_OR_EMPTY** = o runner chegou ao link, mas não conseguiu obter arquivos de imagem da pasta.']
 
           (root/'drive-sync-report.md').write_text('\n'.join(report)+'\n',encoding='utf-8')
           summary = ['## Resultado da sincronização do Drive']
           for slug,res in results.items():
               summary.append(f"- **{labels[slug]}**: `{res['status']}` — HTTP `{res['probe']['http']}`, {res['downloaded']} arquivos, {res['usable']} processados, gdown `{res['gdown_exit']}`.")
           pathlib.Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(summary)+'\n',encoding='utf-8')
-
-          # If every folder returns zero images, keep the job diagnostic but successful so existing site assets remain online.
           PY
 
       - name: Commit synchronization results and diagnostics
@@ -172,5 +170,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add assets/galleries drive-sync-report.md
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "diag: detailed Drive access report [drive-gallery-sync]"
+          git commit -m "sync: import up to 20 Drive photos and publish diagnostics [drive-gallery-sync]"
           git push
