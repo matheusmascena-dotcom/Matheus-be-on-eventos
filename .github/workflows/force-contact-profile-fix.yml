@@ -1,0 +1,103 @@
+name: Force final contact and profile fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/force-contact-profile-fix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, '[force-contact-profile-fix]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download current Instagram profile photo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          curl -L --fail --retry 4 --retry-delay 2 --connect-timeout 15 --max-time 60 \
+            'https://unavatar.io/instagram/mat_mascena97' \
+            -o assets/matheus-profile.jpg
+          file assets/matheus-profile.jpg
+
+      - name: Apply final contact and profile corrections
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          instagram = 'https://www.instagram.com/mat_mascena97/'
+          whatsapp = 'https://w.app/matheusalves-fale-comigo'
+          photo = 'assets/matheus-profile.jpg'
+
+          for name in ('index.html', 'event.html'):
+              p = Path(name)
+              if not p.exists():
+                  continue
+              s = p.read_text(encoding='utf-8')
+
+              # Correct Instagram everywhere.
+              s = s.replace('https://www.instagram.com/matheusmascena/', instagram)
+              s = s.replace('https://www.instagram.com/mat_mascena97', instagram)
+
+              # Correct WhatsApp everywhere, including old generic wa.me links.
+              s = re.sub(r'https://wa\\.me/\\?text=[^"\\'<> ]*', whatsapp, s)
+              s = s.replace('https://w.app/matheusalves-fale-comigo', whatsapp)
+
+              # Replace old/slow profile image references with the local optimized JPG.
+              s = re.sub(r'<img([^>]*?)src="(?:profile-photo\\.svg|assets/profile-matheus\\.svg|assets/matheus-profile\\.jpg)"([^>]*)>',
+                         r'<img\\1src="assets/matheus-profile.jpg" width="170" height="240" loading="eager" fetchpriority="high" decoding="async"\\2>',
+                         s,
+                         flags=re.I)
+
+              # Also catch exact references without width/height.
+              s = s.replace('src="profile-photo.svg"', 'src="assets/matheus-profile.jpg" width="170" height="240" loading="eager" fetchpriority="high" decoding="async"')
+              s = s.replace('src="assets/profile-matheus.svg"', 'src="assets/matheus-profile.jpg" width="170" height="240" loading="eager" fetchpriority="high" decoding="async"')
+
+              # Ensure the personal links in the ambassador presentation are exact.
+              s = re.sub(r'href="https://www\\.instagram\\.com/[^"]*"', f'href="{instagram}"', s)
+              s = re.sub(r'href="https://(?:wa\\.me/[^" ]*|w\\.app/[^" ]*)"', f'href="{whatsapp}"', s)
+
+              # Keep the floating mobile WhatsApp button on the same exact contact URL.
+              s = s.replace('href="https://wa.me/?text=Eventos%20BeOn%20-%20MATHEUSMASCENA"', f'href="{whatsapp}"')
+
+              p.write_text(s, encoding='utf-8')
+
+          # Remove the one-time workflow that rewrote index.html on every push.
+          old_workflow = Path('.github/workflows/fix-contact-countdown-date.yml')
+          if old_workflow.exists():
+              old_workflow.unlink()
+
+          # Create a small verification file so the correction can be audited.
+          Path('profile-contact-status.txt').write_text(
+              'Instagram: ' + instagram + '\n' +
+              'WhatsApp: ' + whatsapp + '\n' +
+              'Profile image: ' + photo + '\n',
+              encoding='utf-8'
+          )
+
+      - name: Verify final references
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'https://www.instagram.com/mat_mascena97/' index.html
+          grep -F 'https://w.app/matheusalves-fale-comigo' index.html
+          grep -F 'assets/matheus-profile.jpg' index.html
+          test -s assets/matheus-profile.jpg
+
+      - name: Commit and push final fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html event.html assets/matheus-profile.jpg profile-contact-status.txt
+          git add -u .github/workflows/fix-contact-countdown-date.yml || true
+          git commit -m 'fix: force correct ambassador contacts and local profile photo [force-contact-profile-fix]'
+          git push
