@@ -23,7 +23,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install gdown pillow
 
-      - name: Download Drive galleries and update site
+      - name: Sync galleries without destructive fallback
         env:
           MUSIC_ON_DRIVE: 'https://drive.google.com/drive/folders/12fRYhu6hrB8qkIEjTRtMX0-AnSQeyJXO?usp=sharing'
           ONE_LIFE_DRIVE: 'https://drive.google.com/drive/folders/11FUlmMiVFobyh8O_FYjaScR9AkXfqkrh?usp=sharing'
@@ -32,64 +32,84 @@ jobs:
           CROCHESTRA_DRIVE: 'https://drive.google.com/drive/folders/1QixvAOaAHKh5Vp91GyrDCWmHQG6l6jhz?usp=drive_link'
         run: |
           python3 - <<'PY'
-          import os, json, shutil, subprocess, pathlib, re
-          from urllib.request import Request, urlopen
-          
+          import os, json, shutil, subprocess, pathlib
+          from PIL import Image
+
           root=pathlib.Path('.')
           gallery_root=root/'assets'/'galleries'
           cover_root=root/'assets'/'covers'
           gallery_root.mkdir(parents=True, exist_ok=True)
           cover_root.mkdir(parents=True, exist_ok=True)
-          
+
           galleries={
             'music-on-sao-paulo': (os.environ['MUSIC_ON_DRIVE'], [
+              {'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},
               {'label':'@clickdoclayton','instagram':'https://www.instagram.com/clickdoclayton/','icon':'📷'}
             ]),
-            'one-life-sao-paulo': (os.environ['ONE_LIFE_DRIVE'], []),
+            'one-life-sao-paulo': (os.environ['ONE_LIFE_DRIVE'], [
+              {'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'}
+            ]),
             'the-grid-outworld': (os.environ['THE_GRID_DRIVE'], [
+              {'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},
               {'label':'@pedrofatore_','instagram':'https://www.instagram.com/pedrofatore_/','icon':'📷'}
             ]),
             'adriatique-x-sao-paulo': (os.environ['ADRIATIQUE_DRIVE'], [
+              {'label':'BeOn Entertainment','instagram':'https://www.instagram.com/beonentertainment/','icon':'📷'},
               {'label':'@pedrofatore_','instagram':'https://www.instagram.com/pedrofatore_/','icon':'📷'}
             ]),
             'crochestra-brasil': (os.environ['CROCHESTRA_DRIVE'], [])
           }
-          
-          def drive_images(url, outdir):
-            tmp=pathlib.Path('/tmp/drive_'+outdir)
-            if tmp.exists(): shutil.rmtree(tmp)
-            tmp.mkdir(parents=True)
-            out=gallery_root/outdir
-            out.mkdir(parents=True, exist_ok=True)
-            for p in out.iterdir():
-              if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.gif'}:
-                p.unlink()
-            cmd=['gdown','--folder',url,'--output',str(tmp),'--remaining-ok','--quiet']
-            r=subprocess.run(cmd, text=True, capture_output=True)
-            if r.returncode!=0:
-              print('gdown failed for',outdir, r.stdout, r.stderr)
-              return []
-            files=[p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp'}]
-            files.sort(key=lambda p:p.name.lower())
-            saved=[]
-            for i,p in enumerate(files,1):
-              ext=p.suffix.lower()
-              dest=out/f'{i:02d}{ext}'
-              shutil.copy2(p,dest)
-              saved.append((dest,p.stem))
-            return saved
-          
+
+          def sync_gallery(url, slug):
+              tmp=pathlib.Path('/tmp/drive_'+slug)
+              if tmp.exists(): shutil.rmtree(tmp)
+              tmp.mkdir(parents=True)
+              cmd=['gdown','--folder',url,'--output',str(tmp),'--remaining-ok']
+              r=subprocess.run(cmd, text=True, capture_output=True)
+              print(f'[{slug}] gdown exit={r.returncode}')
+              if r.stdout: print(r.stdout[-4000:])
+              if r.stderr: print(r.stderr[-4000:])
+              if r.returncode!=0:
+                  return 0
+              files=[p for p in tmp.rglob('*') if p.is_file() and p.suffix.lower() in {'.jpg','.jpeg','.png','.webp','.gif'}]
+              files.sort(key=lambda p:p.name.lower())
+              if not files:
+                  return 0
+
+              out=gallery_root/slug
+              stage=pathlib.Path('/tmp/stage_'+slug)
+              if stage.exists(): shutil.rmtree(stage)
+              stage.mkdir(parents=True)
+
+              count=0
+              for p in files[:20]:
+                  try:
+                      im=Image.open(p).convert('RGB')
+                      count+=1
+                      # Preserve visual quality while ensuring GitHub Pages-friendly JPEGs.
+                      im.save(stage/f'{count:02d}.jpg', 'JPEG', quality=94, optimize=True, progressive=True)
+                  except Exception as e:
+                      print('image conversion failed',p,e)
+
+              if count==0:
+                  return 0
+
+              if out.exists(): shutil.rmtree(out)
+              stage.rename(out)
+              return count
+
           for slug,(url,credits) in galleries.items():
-            saved=drive_images(url,slug)
-            photos=[{'src':f'assets/galleries/{slug}/{p.name}','name':name} for p,name in saved[:8]]
-            payload={'photos':photos,'credits':credits,'sourceFolder':url}
-            if not photos:
-              payload['warning']='Nenhuma foto acessível nesta sincronização.'
-            else:
-              payload['warning']=None
-            (gallery_root/f'{slug}.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          
-          # Download the current card images from the spreadsheet URLs into the repository.
+              count=sync_gallery(url,slug)
+              json_path=gallery_root/f'{slug}.json'
+              if count>0:
+                  photos=[{'src':f'assets/galleries/{slug}/{i:02d}.jpg','name':f'{i:02d}'} for i in range(1,min(count,8)+1)]
+                  payload={'photos':photos,'credits':credits,'sourceFolder':url,'warning':None}
+                  json_path.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+                  print(f'[{slug}] synchronized {count} images')
+              else:
+                  print(f'[{slug}] download failed or empty; preserving existing gallery files')
+
+          # Keep existing verified local card covers. Download replacements only when successful.
           covers={
             'unreal-the-grid':'https://imgproxy.ra.co/_/quality:66/aHR0cHM6Ly9pbWFnZXMucmEuY28vZjg3ZmU1MjM5ZTg3MzA0ZjkzZWQ2NDA1MjE3NzNlNWFmODY1NjMxOS5qcGc=',
             'the-grid-outworld':'https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg',
@@ -98,63 +118,72 @@ jobs:
             'music-on-sao-paulo':'https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp',
             'one-life-sao-paulo':'https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg'
           }
+          import urllib.request
           for slug,url in covers.items():
-            ext='.webp' if '.webp' in url.lower() else '.jpg'
-            dest=cover_root/f'{slug}{ext}'
-            try:
-              req=Request(url,headers={'User-Agent':'Mozilla/5.0'})
-              with urlopen(req,timeout=30) as r, open(dest,'wb') as f:
-                shutil.copyfileobj(r,f)
-              print('cover saved',dest)
-            except Exception as e:
-              print('cover download failed',slug,e)
+              ext='.webp' if '.webp' in url.lower() else '.jpg'
+              dest=cover_root/f'{slug}{ext}'
+              if dest.exists() and dest.stat().st_size>10000:
+                  continue
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+                  with urllib.request.urlopen(req,timeout=30) as r, open(dest,'wb') as f:
+                      shutil.copyfileobj(r,f)
+                  print('cover saved',dest)
+              except Exception as e:
+                  print('cover download failed',slug,e)
           
           index=root/'index.html'
           if index.exists():
-            s=index.read_text(encoding='utf-8')
-            for slug,url in covers.items():
-              for ext in ('.jpg','.webp'):
-                old=''
-              s=s.replace(url, f'assets/covers/{slug}{ext}')
-            # Visual/typography refinements requested by user.
-            override='''\n<style id="beon-user-visual-v4">\nbody{font-size:16px}.amb-wrap{padding-bottom:8px}.hero{padding-top:20px}.hero .ey{margin-top:0;font-size:11px}.hero p{font-size:15px;line-height:1.7}.hero .coupon small{font-size:11px}.hero .coupon b{font-size:25px}.head p{font-size:14px}.box h3,.card h3{font-size:16px}.box p,.meta{font-size:13px;line-height:1.6}.loc,.buy{font-size:12px;padding:11px}.pic{height:250px}.pic img{image-rendering:auto}.profile p{font-size:13px}.profile .links a{font-size:12px}.footer-intro{font-size:13px}.floating-ready a{font-size:12px}\n@media(max-width:760px){.hero{padding-top:16px}.amb-wrap{padding-bottom:6px}.hero .ey{margin-top:0}.hero p{font-size:14px}.box p,.meta{font-size:13px}.cards .pic{height:240px}.profile p{font-size:13px}.profile .links a{font-size:12px}}\n</style>\n'''
-            if 'beon-user-visual-v4' not in s:
-              s=s.replace('</head>', override+'</head>',1)
-            # Swap card images to local high-quality copies.
-            for slug in covers:
-              s=s.replace(f'https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg', 'assets/covers/the-grid-outworld.jpg')
-              s=s.replace(f'https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg', 'assets/covers/adriatique-x-sao-paulo.jpg')
-              s=s.replace(f'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10', 'assets/covers/crochestra-brasil.jpg')
-              s=s.replace(f'https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp', 'assets/covers/music-on-sao-paulo.webp')
-              s=s.replace(f'https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg', 'assets/covers/one-life-sao-paulo.jpg')
-              s=s.replace(covers['unreal-the-grid'], 'assets/covers/unreal-the-grid.jpg')
-            index.write_text(s,encoding='utf-8')
-          
+              s=index.read_text(encoding='utf-8')
+              replacements={
+                covers['unreal-the-grid']:'assets/covers/unreal-the-grid.jpg',
+                covers['the-grid-outworld']:'assets/covers/the-grid-outworld.jpg',
+                covers['adriatique-x-sao-paulo']:'assets/covers/adriatique-x-sao-paulo.jpg',
+                covers['crochestra-brasil']:'assets/covers/crochestra-brasil.jpg',
+                covers['music-on-sao-paulo']:'assets/covers/music-on-sao-paulo.webp',
+                covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
+              }
+              for old,new in replacements.items(): s=s.replace(old,new)
+              index.write_text(s,encoding='utf-8')
+
           event=root/'event.html'
           if event.exists():
-            s=event.read_text(encoding='utf-8')
-            # Replace event cover URLs with repo-local copies.
-            s=s.replace('https://media.betimelapse.com.br/uploads/2026/05/1779991359288_The_Grid_Outworld_Klangkuenstler_2026_-_Capa_Timelapse.jpg','assets/covers/the-grid-outworld.jpg')
-            s=s.replace('https://kraken.ingresse.com/event/posters/91444/large/1773685318.8785126.jpg','assets/covers/adriatique-x-sao-paulo.jpg')
-            s=s.replace('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcREHeNVMidXoiwj9uvvhUIu8g8hf2E4Zck8u8Rg0EA7nHSjPLA3TSD6ypjA&s=10','assets/covers/crochestra-brasil.jpg')
-            s=s.replace('https://api.wegoout.com.br/images/events/642/full_music-on-sp.webp','assets/covers/music-on-sao-paulo.webp')
-            s=s.replace('https://media.betimelapse.com.br/uploads/2026/05/1779302100069_One_Life_SP_2026_-_Capa_Timelapse.jpg','assets/covers/one-life-sao-paulo.jpg')
-            s=s.replace('https://imgproxy.ra.co/_/quality:66/aHR0cHM6Ly9pbWFnZXMucmEuY28vZjg3ZmU1MjM5ZTg3MzA0ZjkzZWQ2NDA1MjE3NzNlNWFmODY1NjMxOS5qcGc=','assets/covers/unreal-the-grid.jpg')
-            override='''\n<style id="beon-user-visual-v4">\nbody{font-size:16px}.lead{font-size:14px}.detail small{font-size:10px}.detail strong{font-size:14px}.btn{font-size:12px;padding:12px}.gallery>p{display:none}.beon-gallery-credit{font-size:12px}.gallery h2{font-size:33px}\n@media(max-width:760px){.lead{font-size:14px}.detail strong{font-size:14px}.beon-gallery-credit{font-size:12px}}\n</style>\n'''
-            if 'beon-user-visual-v4' not in s:
-              s=s.replace('</head>', override+'</head>',1)
-            # Hide the entire gallery section when there are no photos; remove descriptive paragraph always.
-            s=s.replace('<p data-t="photoText">Galeria premium com até 8 fotos selecionadas. Toque ou clique em uma foto para abrir em tela cheia.</p>','')
-            s=s.replace("grid.innerHTML='<div class=\\\"gallery-empty\\\">As fotos desta galeria estão sendo preparadas.</div>';credit.innerHTML='';return", "grid.innerHTML='';credit.innerHTML='';document.getElementById('gallery').style.display='none';return")
-            s=s.replace("renderGallery({photos:fallback[ev[0]]||[],credits:ev[0]==='adriatique-x-sao-paulo'?[{label:'BeOn Entertainment',instagram:'https://www.instagram.com/beonentertainment/',icon:'📷'},{label:'Tim Buiting',instagram:null,icon:'📷'}]:[]})", "renderGallery({photos:fallback[ev[0]]||[],credits:ev[0]==='adriatique-x-sao-paulo'?[{label:'BeOn Entertainment',instagram:'https://www.instagram.com/beonentertainment/',icon:'📷'},{label:'@pedrofatore_',instagram:'https://www.instagram.com/pedrofatore_/',icon:'📷'}]:[]})")
-            event.write_text(s,encoding='utf-8')
+              s=event.read_text(encoding='utf-8')
+              replacements={
+                covers['unreal-the-grid']:'assets/covers/unreal-the-grid.jpg',
+                covers['the-grid-outworld']:'assets/covers/the-grid-outworld.jpg',
+                covers['adriatique-x-sao-paulo']:'assets/covers/adriatique-x-sao-paulo.jpg',
+                covers['crochestra-brasil']:'assets/covers/crochestra-brasil.jpg',
+                covers['music-on-sao-paulo']:'assets/covers/music-on-sao-paulo.webp',
+                covers['one-life-sao-paulo']:'assets/covers/one-life-sao-paulo.jpg'
+              }
+              for old,new in replacements.items(): s=s.replace(old,new)
+              s=s.replace('<p data-t="photoText">Galeria premium com até 8 fotos selecionadas. Toque ou clique em uma foto para abrir em tela cheia.</p>','')
+              s=s.replace("grid.innerHTML='<div class=\\\"gallery-empty\\\">As fotos desta galeria estão sendo preparadas.</div>';credit.innerHTML='';return", "grid.innerHTML='';credit.innerHTML='';document.getElementById('gallery').style.display='none';return")
+              s=s.replace("{label:'Tim Buiting',instagram:null,icon:'📷'}", "{label:'@pedrofatore_',instagram:'https://www.instagram.com/pedrofatore_/',icon:'📷'}")
+              event.write_text(s,encoding='utf-8')
           PY
 
-      - name: Commit synced galleries and visuals
+      - name: Apply visual readability refinements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['index.html','event.html']:
+              p=Path(name)
+              s=p.read_text(encoding='utf-8')
+              if name=='index.html':
+                  css='''<style id="beon-fix-image-v5">\nbody{font-size:16px}.amb-wrap{padding-bottom:6px}.hero{padding-top:18px}.hero .ey{margin-top:0;font-size:11px}.hero p{font-size:15px;line-height:1.7}.head p{font-size:14px}.box h3,.card h3{font-size:16px}.box p,.meta{font-size:13px;line-height:1.6}.loc,.buy{font-size:12px;padding:11px}.pic{height:250px}.pic img{image-rendering:auto;object-fit:contain}.profile p{font-size:13px}.profile .links a{font-size:12px}.footer-intro{font-size:13px}@media(max-width:760px){.amb-wrap{padding-bottom:4px}.hero{padding-top:12px}.hero p{font-size:14px}.box p,.meta{font-size:13px}.cards .pic{height:240px}.profile p{font-size:13px}}\n</style>'''
+              else:
+                  css='''<style id="beon-fix-image-v5">\nbody{font-size:16px}.lead{font-size:14px}.detail small{font-size:10px}.detail strong{font-size:14px}.btn{font-size:12px;padding:12px}.gallery>p{display:none}.beon-gallery-credit{font-size:12px}.gallery h2{font-size:33px}@media(max-width:760px){.lead{font-size:14px}.detail strong{font-size:14px}.beon-gallery-credit{font-size:12px}}\n</style>'''
+              if 'beon-fix-image-v5' not in s: s=s.replace('</head>',css+'</head>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit repaired galleries and visuals
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html event.html assets/galleries assets/covers
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "feat: sync Drive galleries and visual updates [drive-gallery-sync]"
+          git commit -m "fix: restore galleries and image loading [drive-gallery-sync]"
           git push
