@@ -5,20 +5,18 @@ on:
   push:
     branches: [main]
     paths:
-      - 'profile-config.json'
       - '.github/workflows/beon-master-sync.yml'
-      - 'index.html'
 
 permissions:
   contents: write
 
 concurrency:
-  group: beon-profile-sync
+  group: beon-master-sync
   cancel-in-progress: true
 
 jobs:
-  profile:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-profile-layout]') }}
+  visual:
+    if: ${{ !contains(github.event.head_commit.message, '[beon-background]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,66 +24,32 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Reposicionar a foto existente sem alterar o arquivo
+      - name: Restaurar a versão estável 3.0 antes da melhoria visual
+        shell: bash
+        run: |
+          git fetch origin b8c4d5a83ffa7a27b3c3fbaac50fef6ca9f0077f --depth=1
+          git checkout b8c4d5a83ffa7a27b3c3fbaac50fef6ca9f0077f -- index.html
+
+      - name: Aplicar melhorias de background
         shell: python
         run: |
-          import json
-          import re
           from pathlib import Path
-
-          root = Path('.')
-          cfg = json.loads((root / 'profile-config.json').read_text(encoding='utf-8'))
-          image_url = cfg['profileImage']
-          p = root / 'index.html'
-          html = p.read_text(encoding='utf-8')
-
-          # Remover somente a imagem do bloco superior.
-          html = re.sub(
-              r'<div\s+class=["\']amb-photo["\'][^>]*>.*?</div>\s*',
-              '', html, count=1, flags=re.I | re.S
-          )
-
-          # O topo continua com as mesmas informações, centralizadas e sem foto.
-          top_style = '''\n<style id="beon-profile-top-no-photo">\n.hero-inner{grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:20px!important}\n.amb-copy{width:100%!important;max-width:900px!important;display:flex!important;flex-direction:column!important;align-items:center!important}\n</style>\n'''
-          html = re.sub(r'<style\s+id=["\']beon-profile-top-no-photo["\']>.*?</style>\s*', '', html, flags=re.I | re.S)
-          html = re.sub(r'</head>', top_style + '</head>', html, count=1, flags=re.I)
-
-          # Na apresentação inferior, manter a mesma foto existente ao lado do texto.
-          if 'class="ambassador-bottom-card"' in html:
-              if 'class="ambassador-bottom-photo"' not in html:
-                  html, inserted = re.subn(
-                      r'(<div\s+class=["\']ambassador-bottom-card["\'][^>]*>\s*)(<div\s+class=["\']ambassador-bottom-copy["\'])',
-                      r'\1<div class="ambassador-bottom-photo"><img src="' + image_url + r'" alt="Matheus Alves Mascena" loading="lazy" decoding="async"></div>\n\2',
-                      html, count=1, flags=re.I | re.S
-                  )
-                  if inserted != 1:
-                      raise SystemExit('Não foi possível localizar a apresentação inferior.')
-              else:
-                  html = re.sub(
-                      r'(<div\s+class=["\']ambassador-bottom-photo["\'][^>]*>\s*<img[^>]*src=["\'])[^"\']*("[^>]*>\s*</div>)',
-                      r'\1' + image_url + r'\2', html, count=1, flags=re.I | re.S
-                  )
-
-          bottom_style = '''\n<style id="beon-profile-bottom-side-by-side">\n.ambassador-bottom-card{grid-template-columns:240px minmax(0,1fr)!important;gap:28px!important;align-items:center!important;text-align:left!important}\n.ambassador-bottom-photo{display:flex!important;justify-content:center!important;align-items:center!important}\n.ambassador-bottom-photo img{display:block!important;width:220px!important;height:300px!important;object-fit:cover!important;border-radius:18px!important;border:1px solid #3fe0d088!important;box-shadow:0 0 0 1px #7c5cff22,0 0 38px #7c5cff18!important}\n.ambassador-bottom-copy{width:100%!important;max-width:none!important}\n@media(max-width:700px){.ambassador-bottom-card{grid-template-columns:1fr!important;text-align:center!important}.ambassador-bottom-photo img{width:min(220px,70vw)!important;height:auto!important;aspect-ratio:3/4!important}.ambassador-bottom-copy{max-width:900px!important;margin:auto!important}}\n</style>\n'''
-          html = re.sub(r'<style\s+id=["\']beon-profile-bottom-side-by-side["\']>.*?</style>\s*', '', html, flags=re.I | re.S)
-          html = re.sub(r'</head>', bottom_style + '</head>', html, count=1, flags=re.I)
-
-          p.write_text(html, encoding='utf-8')
-          print('Foto reposicionada: topo sem imagem; apresentação inferior com a mesma imagem ao lado do texto.')
-
+          import re
+          p=Path('index.html')
+          html=p.read_text(encoding='utf-8')
+          css='''\n<style id="beon-background-upgrade-1">\nbody{background:radial-gradient(900px 520px at 8% 4%,rgba(124,92,255,.18),transparent 68%),radial-gradient(760px 460px at 92% 8%,rgba(255,47,146,.12),transparent 68%),radial-gradient(820px 520px at 52% 42%,rgba(63,224,208,.055),transparent 70%),radial-gradient(900px 700px at 18% 88%,rgba(124,92,255,.08),transparent 72%),linear-gradient(145deg,#04030a 0%,#080510 48%,#06030d 100%)!important}\nbody:before{content:"";position:fixed;inset:-18%;pointer-events:none;z-index:-3;background:radial-gradient(520px 340px at 20% 18%,rgba(124,92,255,.12),transparent 70%),radial-gradient(460px 300px at 78% 28%,rgba(255,47,146,.08),transparent 72%),radial-gradient(500px 360px at 58% 78%,rgba(63,224,208,.045),transparent 72%);filter:blur(42px);opacity:.95;animation:beonAurora 18s ease-in-out infinite alternate}\nbody:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;background-image:radial-gradient(rgba(255,255,255,.022) .7px,transparent .7px);background-size:13px 13px;opacity:.42}\n@keyframes beonAurora{0%{transform:translate3d(-1.5%,-1%,0) scale(1)}50%{transform:translate3d(1.2%,.8%,0) scale(1.025)}100%{transform:translate3d(-.4%,1.4%,0) scale(1.045)}}\n.hero:before{content:"";position:absolute;inset:0 -18vw;height:520px;pointer-events:none;background:radial-gradient(600px 240px at 50% 15%,rgba(124,92,255,.10),transparent 72%);filter:blur(10px);z-index:-1}\n.section{position:relative}.section:before{content:"";position:absolute;left:50%;top:0;width:760px;height:260px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(circle,rgba(124,92,255,.055),transparent 70%);filter:blur(18px);z-index:-1}\n.card{background:linear-gradient(155deg,rgba(25,17,36,.92),rgba(10,7,17,.94))!important;border-color:rgba(255,255,255,.10)!important;box-shadow:0 16px 42px rgba(0,0,0,.55),0 0 34px rgba(124,92,255,.06)!important}\n.ambassador-bottom-card{background:linear-gradient(135deg,rgba(25,15,38,.92),rgba(10,7,17,.94),rgba(19,12,29,.92))!important;box-shadow:0 24px 60px rgba(0,0,0,.62),0 0 46px rgba(124,92,255,.08)!important}\n</style>\n'''
+          html=re.sub(r'<style id="beon-background-upgrade-1">.*?</style>\s*','',html,flags=re.S)
+          html=re.sub(r'</head>',css+'</head>',html,count=1,flags=re.I)
+          p.write_text(html,encoding='utf-8')
       - name: Validar
         run: |
-          grep -F 'beon-profile-top-no-photo' index.html
-          grep -F 'beon-profile-bottom-side-by-side' index.html
-          grep -F 'ambassador-bottom-photo' index.html
-          grep -F 'drive.google.com/thumbnail?id=1vrISCF_6pWFQAlOg6PabIOP9k3X6R4nM' index.html
-          ! grep -F '<div class="amb-photo">' index.html
-
+          grep -F 'beon-background-upgrade-1' index.html
+          grep -F 'beonAurora' index.html
+          ! grep -F 'beon-background-upgrade-1' <(git show b8c4d5a83ffa7a27b3c3fbaac50fef6ca9f0077f:index.html)
       - name: Publicar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html .github/workflows/beon-master-sync.yml
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'fix: deixar foto somente na apresentação inferior [beon-profile-layout]'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'feat: melhorar background visual [beon-background]'
           git push
