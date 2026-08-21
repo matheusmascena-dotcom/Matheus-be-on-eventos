@@ -21,16 +21,18 @@ jobs:
         with: { fetch-depth: 1 }
       - name: Injetar camada CMS sem alterar a interface existente
         shell: python
+        env:
+          GITHUB_SHA: ${{ github.sha }}
         run: |
+          import os
           from pathlib import Path
-          for file, src, marker in [
-              ('index.html','assets/beon-v4.js','beon-v4.js'),
-              ('event.html','assets/beon-event-v4.js','beon-event-v4.js')]:
+          sha=os.environ['GITHUB_SHA']
+          for file, src, marker in [('index.html','assets/beon-v4.js','beon-v4.js'),('event.html','assets/beon-event-v4.js','beon-event-v4.js')]:
               p=Path(file)
               if not p.exists(): continue
               html=p.read_text(encoding='utf-8')
               html='\n'.join(line for line in html.splitlines() if marker not in line)
-              tag=f'<script src="{src}?v={${{ github.sha }}}" defer></script>'
+              tag=f'<script src="{src}?v={sha}" defer></script>'
               html=html.replace('</body>',tag+'\n</body>',1)
               p.write_text(html,encoding='utf-8')
       - name: Validar integração
