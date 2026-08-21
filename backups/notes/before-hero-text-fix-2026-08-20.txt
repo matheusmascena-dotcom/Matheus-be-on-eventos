@@ -1,0 +1,1 @@
+Backup marker created before direct hero text/accent correction. Stable reference: commit 937706d576c1780613191d3663f7256db36b7e5f (featured upcoming countdown). Only requested hero subtitle typography and MÚSICA accent will be changed.
