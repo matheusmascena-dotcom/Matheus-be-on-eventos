@@ -112,6 +112,24 @@ main:after{content:"";position:fixed;left:-10vw;right:-10vw;bottom:8%;height:110
           html=re.sub(r'</body>',script+'</body>',html,count=1,flags=re.I)
           p.write_text(html,encoding='utf-8')
 
+      - name: Ajustar legibilidade do subtítulo e do acento de MÚSICA
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          html=p.read_text(encoding='utf-8')
+          html=html.replace('Eventos, música & experiências','EVENTOS, MÚSICA & EXPERIÊNCIAS')
+          fix='''
+<style id="beon-hero-readability-fix">
+.hero-sub{font-size:16px!important;line-height:1.85!important}
+.hero-title{line-height:.98!important;padding-top:.08em!important;overflow:visible!important}
+</style>
+'''
+          html=re.sub(r'<style id="beon-hero-readability-fix">.*?</style>\s*','',html,flags=re.S)
+          html=re.sub(r'</head>',fix+'</head>',html,count=1,flags=re.I)
+          p.write_text(html,encoding='utf-8')
+
       - name: Validar
         run: |
           grep -F 'beon-background-upgrade-1' index.html
@@ -119,6 +137,9 @@ main:after{content:"";position:fixed;left:-10vw;right:-10vw;bottom:8%;height:110
           grep -F 'beon-upcoming-featured' index.html
           grep -F 'featuredUpcoming' index.html
           grep -F 'fcDays' index.html
+          grep -F 'EVENTOS, MÚSICA & EXPERIÊNCIAS' index.html
+          grep -F 'beon-hero-readability-fix' index.html
+          grep -F '.hero-sub{font-size:16px!important' index.html
           ! grep -F 'beon-upcoming-featured' <(git show b8c4d5a83ffa7a27b3c3fbaac50fef6ca9f0077f:index.html)
 
       - name: Publicar
@@ -126,5 +147,5 @@ main:after{content:"";position:fixed;left:-10vw;right:-10vw;bottom:8%;height:110
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'feat: destacar proximo evento com countdown [beon-upcoming]'
+          git diff --cached --quiet || git commit -m 'fix: aumentar subtitulo e corrigir acento de MÚSICA [beon-hero]'
           git push
