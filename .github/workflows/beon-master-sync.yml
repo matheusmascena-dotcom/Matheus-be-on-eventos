@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   visual:
-    if: ${{ !contains(github.event.head_commit.message, '[beon-background]') && !contains(github.event.head_commit.message, '[beon-upcoming]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[beon-background]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -94,8 +94,8 @@ main:after{content:"";position:fixed;left:-10vw;right:-10vw;bottom:8%;height:110
 <script id="beon-upcoming-featured-script">
 (function(){
   const host=document.getElementById('featuredUpcoming');
-  if(!host || !Array.isArray(window.EVENTS) && typeof EVENTS==='undefined') return;
-  const events=typeof EVENTS!=='undefined'?EVENTS:window.EVENTS;
+  if(!host || typeof EVENTS==='undefined') return;
+  const events=EVENTS;
   const now=Date.now();
   const upcoming=events.filter(e=>new Date(e[2]+'T00:00:00').getTime()>=now).sort((a,b)=>new Date(a[2]+'T00:00:00')-new Date(b[2]+'T00:00:00'))[0];
   if(!upcoming){document.getElementById('featured-upcoming').style.display='none';return;}
