@@ -6,6 +6,7 @@ on:
       - '.github/workflows/beon-cms-sync.yml'
       - 'assets/beon-v4.js'
       - 'assets/beon-event-v4.js'
+      - 'assets/admin-v4-route.js'
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,26 +19,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 1 }
-      - name: Injetar camada CMS sem alterar a interface existente
+        with:
+          fetch-depth: 1
+      - name: Injetar camadas CMS e rota Admin V4
         shell: python
         env:
-          GITHUB_SHA: ${{ github.sha }}
+          SHA: ${{ github.sha }}
         run: |
-          import os
           from pathlib import Path
-          sha=os.environ['GITHUB_SHA']
-          for file, src, marker in [('index.html','assets/beon-v4.js','beon-v4.js'),('event.html','assets/beon-event-v4.js','beon-event-v4.js')]:
+          import os, re
+          sha=os.environ['SHA']
+          for file, scripts in {
+              'index.html': ['assets/admin-v4-route.js','assets/beon-v4.js'],
+              'event.html': ['assets/beon-event-v4.js']
+          }.items():
               p=Path(file)
-              if not p.exists(): continue
+              if not p.exists():
+                  continue
               html=p.read_text(encoding='utf-8')
-              html='\n'.join(line for line in html.splitlines() if marker not in line)
-              tag=f'<script src="{src}?v={sha}" defer></script>'
-              html=html.replace('</body>',tag+'\n</body>',1)
+              for src in scripts:
+                  html=re.sub(r'<script[^>]+src=["\']'+re.escape(src)+r'(?:\?[^"\']*)?["\'][^>]*></script>\s*','',html,flags=re.I)
+                  tag=f'<script src="{src}?v={sha}" defer></script>'
+                  html=html.replace('</body>', tag+'\n</body>', 1)
               p.write_text(html,encoding='utf-8')
       - name: Validar integração
         shell: bash
         run: |
+          grep -F 'assets/admin-v4-route.js' index.html
           grep -F 'assets/beon-v4.js' index.html
           grep -F 'assets/beon-event-v4.js' event.html
       - name: Publicar
@@ -45,5 +53,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html event.html
-          git diff --cached --quiet || git commit -m 'feat: ativar CMS Supabase BeOn [beon-cms]'
+          git diff --cached --quiet || git commit -m 'feat: ativar rota Admin V4 [beon-cms]'
           git push
