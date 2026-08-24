@@ -9,15 +9,34 @@
     'one-life-sao-paulo':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?coupon=MATHEUSMASCENA'
   };
   const qs=s=>document.querySelector(s); const slug=new URLSearchParams(location.search).get('event'); if(!slug)return;
+  const setMeta=(name,content,property=false)=>{if(!content)return;const attr=property?'property':'name';let el=document.head.querySelector(`meta[${attr}="${name}"]`);if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute('content',content);};
+  const setCanonical=href=>{let el=document.head.querySelector('link[rel="canonical"]');if(!el){el=document.createElement('link');el.rel='canonical';document.head.appendChild(el);}el.href=href;};
+  const setJsonLd=obj=>{let el=document.head.querySelector('#beon-event-schema');if(!el){el=document.createElement('script');el.id='beon-event-schema';el.type='application/ld+json';document.head.appendChild(el);}el.textContent=JSON.stringify(obj);};
   if(qs('#buy') && PURCHASE_URLS[slug]) qs('#buy').href=PURCHASE_URLS[slug];
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const sb=window.supabase?.createClient?.(SUPABASE_URL,SUPABASE_KEY); if(!sb)return;
   async function run(){
     const {data:e,error}=await sb.from('events').select('*').eq('slug',slug).maybeSingle(); if(error||!e)return;
+    const publicUrl=new URL(location.href); publicUrl.searchParams.set('event',e.slug); publicUrl.hash='';
+    const eventUrl=publicUrl.toString();
+    const description=`${e.name} — ${e.event_date ? new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : ''}. ${e.location||''}. Veja informações, fotos oficiais e compre seu ingresso com 5% de desconto usando o cupom MATHEUSMASCENA.`.replace(/\s+/g,' ').trim();
+    document.title=`${e.name} | BeOn Eventos - Embaixador Matheus Mascena`;
+    setMeta('description',description);
+    setMeta('robots','index,follow,max-image-preview:large');
+    setCanonical(eventUrl);
+    setMeta('og:type','event',true);setMeta('og:title',document.title,true);setMeta('og:description',description,true);setMeta('og:url',eventUrl,true);if(e.image_url)setMeta('og:image',e.image_url,true);setMeta('og:site_name','BeOn Eventos',true);
+    setMeta('twitter:card','summary_large_image');setMeta('twitter:title',document.title);setMeta('twitter:description',description);if(e.image_url)setMeta('twitter:image',e.image_url);
+    const schema={
+      '@context':'https://schema.org','@type':'Event','name':e.name,'description':description,'startDate':e.event_date ? `${e.event_date}T00:00:00-03:00` : undefined,
+      'url':eventUrl,'image':e.image_url?[e.image_url]:undefined,'location':{'@type':'Place','name':e.location||'São Paulo, SP','address':{'@type':'PostalAddress','addressLocality':'São Paulo','addressRegion':'SP','addressCountry':'BR'}},
+      'organizer':{'@type':'Organization','name':'BeOn Eventos'},'eventStatus':'https://schema.org/EventScheduled','eventAttendanceMode':'https://schema.org/OfflineEventAttendanceMode'
+    };
+    const purchaseUrl=PURCHASE_URLS[e.slug]||e.purchase_url;if(purchaseUrl)schema.offers={'@type':'Offer','url':purchaseUrl,'availability':'https://schema.org/InStock'};
+    Object.keys(schema).forEach(k=>schema[k]===undefined&&delete schema[k]);setJsonLd(schema);
     document.title=e.name+' — BE·ON';
     const cover=qs('#cover'); if(cover){cover.src=e.image_url||'';cover.alt=e.name;}
     if(qs('#name'))qs('#name').textContent=e.name; if(qs('#date'))qs('#date').textContent=new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}); if(qs('#local'))qs('#local').textContent=e.location||''; if(qs('#artists'))qs('#artists').textContent=e.artists||'';
-    if(qs('#buy'))qs('#buy').href=PURCHASE_URLS[e.slug]||e.purchase_url||'#';
+    if(qs('#buy'))qs('#buy').href=purchaseUrl||'#';
     const map=qs('#maps'); if(map&&e.source_url) map.href=e.source_url;
     const {data:photos}=await sb.from('event_gallery_photos').select('*').eq('event_id',e.id).order('position');
     const list=photos||[]; const gallery=qs('#gal'), credits=qs('#credits'), section=qs('#gallery');
