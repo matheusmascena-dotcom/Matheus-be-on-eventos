@@ -1,14 +1,23 @@
 (() => {
   const SUPABASE_URL='https://bellpluuhrrluwsgouob.supabase.co'; const SUPABASE_KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
-  const sb=window.supabase?.createClient?.(SUPABASE_URL,SUPABASE_KEY); if(!sb)return;
+  const PURCHASE_URLS={
+    'the-grid-outworld':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/96109?coupon=MATHEUSMASCENA',
+    'adriatique-x-sao-paulo':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/91444?coupon=MATHEUSMASCENA',
+    'crochestra-brasil':'https://cart.ingresse.com/7bc10b1b-bef9-45cf-a45b-135651fd921a/tickets?passkey=MATHEUSMASCENA',
+    'music-on-sao-paulo':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?coupon=MATHEUSMASCENA',
+    'unreal-the-grid':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?coupon=MATHEUSMASCENA',
+    'one-life-sao-paulo':'https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?coupon=MATHEUSMASCENA'
+  };
   const qs=s=>document.querySelector(s); const slug=new URLSearchParams(location.search).get('event'); if(!slug)return;
+  if(qs('#buy') && PURCHASE_URLS[slug]) qs('#buy').href=PURCHASE_URLS[slug];
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const sb=window.supabase?.createClient?.(SUPABASE_URL,SUPABASE_KEY); if(!sb)return;
   async function run(){
     const {data:e,error}=await sb.from('events').select('*').eq('slug',slug).maybeSingle(); if(error||!e)return;
     document.title=e.name+' — BE·ON';
     const cover=qs('#cover'); if(cover){cover.src=e.image_url||'';cover.alt=e.name;}
     if(qs('#name'))qs('#name').textContent=e.name; if(qs('#date'))qs('#date').textContent=new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}); if(qs('#local'))qs('#local').textContent=e.location||''; if(qs('#artists'))qs('#artists').textContent=e.artists||'';
-    if(qs('#buy'))qs('#buy').href=e.purchase_url||'#';
+    if(qs('#buy'))qs('#buy').href=PURCHASE_URLS[e.slug]||e.purchase_url||'#';
     const map=qs('#maps'); if(map&&e.source_url) map.href=e.source_url;
     const {data:photos}=await sb.from('event_gallery_photos').select('*').eq('event_id',e.id).order('position');
     const list=photos||[]; const gallery=qs('#gal'), credits=qs('#credits'), section=qs('#gallery');
