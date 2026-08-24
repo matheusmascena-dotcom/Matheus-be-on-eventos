@@ -6,8 +6,11 @@
   let sessionId=localStorage.getItem(sessionKey);
   if(!sessionId){sessionId=crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;localStorage.setItem(sessionKey,sessionId);}
   const params=new URLSearchParams(location.search);
+  const sourceKey='beon_analytics_source_v1';
+  const incomingSource=params.get('src')||params.get('utm_source')||'';
+  if(incomingSource)sessionStorage.setItem(sourceKey,incomingSource.slice(0,80));
+  const source=sessionStorage.getItem(sourceKey)||null;
   const eventSlug=params.get('event')||null;
-  const source=params.get('src')||params.get('utm_source')||null;
   const path=`${location.pathname}${location.search}`;
   const referrer=document.referrer||null;
   const once=new Set();
