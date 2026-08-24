@@ -1,0 +1,1 @@
+Pre-SEO rollback reference: commit 7cb4e2465e3afc1520ed6efc262c904d5d52bd86. This file documents the stable state before the Google SEO professionalization package.
