@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=the-grid-outworld</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=adriatique-x-sao-paulo</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=crochestra-brasil</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=music-on-sao-paulo</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=unreal-the-grid</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=one-life-sao-paulo</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+</urlset>
