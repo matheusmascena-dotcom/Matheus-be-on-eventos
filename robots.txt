@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/sitemap.xml
+Sitemap: https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/sitemap-google.xml
