@@ -1,0 +1,1 @@
+Backup de referência: admin-v4.html antes da correção do fluxo de importação de planilha. O conteúdo anterior também permanece disponível no histórico do Git. Data: 2026-08-24.
