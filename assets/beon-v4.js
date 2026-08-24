@@ -10,6 +10,21 @@
   const getFavs = () => JSON.parse(localStorage.getItem(favKey) || '[]');
   const saveFavs = x => localStorage.setItem(favKey, JSON.stringify(x));
 
+  function setHomeMeta(){
+    if(!qs('#grid')) return;
+    const title='BeOn Eventos - Embaixador Matheus Mascena | Ingressos com 5% de desconto';
+    const description='Descubra os próximos eventos de música eletrônica, veja fotos oficiais, salve seus favoritos e garanta seu ingresso diretamente da plataforma Ingresse com 5% de desconto com o cupom MATHEUSMASCENA.';
+    const url='https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/';
+    const setMeta=(name,content,property=false)=>{if(!content)return;const attr=property?'property':'name';let el=document.head.querySelector(`meta[${attr}="${name}"]`);if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el);}el.setAttribute('content',content);};
+    const canon=document.head.querySelector('link[rel="canonical"]')||document.head.appendChild(Object.assign(document.createElement('link'),{rel:'canonical'})); canon.href=url;
+    document.title=title;
+    setMeta('description',description); setMeta('robots','index,follow,max-image-preview:large');
+    setMeta('og:type','website',true); setMeta('og:title',title,true); setMeta('og:description',description,true); setMeta('og:url',url,true); setMeta('og:site_name','BeOn Eventos',true);
+    setMeta('twitter:card','summary'); setMeta('twitter:title',title); setMeta('twitter:description',description);
+    const schema={'@context':'https://schema.org','@type':'WebSite','name':'BeOn Eventos','alternateName':'BeOn','url':url,'description':description,'inLanguage':'pt-BR'};
+    let ld=document.head.querySelector('#beon-home-schema'); if(!ld){ld=document.createElement('script');ld.id='beon-home-schema';ld.type='application/ld+json';document.head.appendChild(ld);} ld.textContent=JSON.stringify(schema);
+  }
+
   async function metric(type, eventId=null) {
     try { await sb.from('site_metrics').insert({ metric_type:type, event_id:eventId, path:location.pathname + location.search, referrer:document.referrer || null, user_agent:navigator.userAgent }); } catch {}
   }
@@ -53,6 +68,7 @@
 
   async function publicHome() {
     if (!qs('#grid')) return;
+    setHomeMeta();
     try {
       const events=await loadEvents();
       renderCards(events); renderFeatured(events); enhanceSearch(events); metric('page_view');
