@@ -1,0 +1,1 @@
+Backup marker before SEO professionalization. Stable pre-SEO state: main at commit 7cb4e2465e3afc1520ed6efc262c904d5d52bd86. Restore main to this commit if rollback is required.
