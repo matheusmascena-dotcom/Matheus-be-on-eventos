@@ -1,0 +1,1 @@
+Referência da versão estável anterior à implementação do botão “Carregar arquivo” no Admin V4. A versão anterior continua preservada no histórico do Git (commit 4212a41f9f035e05edee24e5e492e6e63a680167).
