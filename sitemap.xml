@@ -15,4 +15,46 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=the-grid-outworld</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=adriatique-x-sao-paulo</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=crochestra-brasil</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=music-on-sao-paulo</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=unreal-the-grid</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/event.html?event=one-life-sao-paulo</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
 </urlset>
