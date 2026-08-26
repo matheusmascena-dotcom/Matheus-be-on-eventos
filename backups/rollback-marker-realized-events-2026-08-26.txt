@@ -1,0 +1,1 @@
+Rollback marker: this file is paired with backup branch backup-before-realized-events-2026-08-26 created immediately before the implemented "Eventos Realizados" change.
