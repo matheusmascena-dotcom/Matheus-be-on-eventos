@@ -4,15 +4,8 @@
   const BUCKET = 'event-media';
 
   const fields = [
-    ['n', 'Nome do evento'],
-    ['d', 'Data do evento'],
-    ['l', 'Localização'],
-    ['a', 'Line-up / Artistas'],
-    ['b', 'Link de compra'],
-    ['i', 'Capa do card'],
-    ['m', 'Link do Google Maps'],
-    ['p', 'Status do evento'],
-    ['desc', 'Descrição do evento']
+    ['n', 'Nome do evento'], ['d', 'Data do evento'], ['l', 'Localização'], ['a', 'Line-up / Artistas'],
+    ['b', 'Link de compra'], ['i', 'Capa do card'], ['m', 'Link do Google Maps'], ['p', 'Status do evento'], ['desc', 'Descrição do evento']
   ];
 
   function ensureStyles() {
@@ -20,257 +13,19 @@
     const style = document.createElement('style');
     style.id = 'beon-field-labels-style';
     style.textContent = `
-      .beon-labeled-field{min-width:0;display:grid;gap:5px}
-      .beon-labeled-field>label{display:block;color:#a49ab5;font-size:11px;line-height:1.2;padding-left:2px}
-      .beon-labeled-field>input,.beon-labeled-field>select,.beon-labeled-field>textarea{width:100%;box-sizing:border-box}
-      .beon-labeled-field.beon-field-description{grid-column:1/-1;margin-top:0}
-      .beon-cover-options{display:grid;gap:7px;margin-top:0;padding:9px 10px;border:1px solid #ffffff12;border-radius:10px;background:#0b0812}
-      .beon-cover-option-title{font-size:10px;color:#c8bfd4;line-height:1.3}
-      .beon-cover-url-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
-      .beon-cover-url-row input{margin:0}
-      .beon-cover-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}
-      .beon-cover-file-row input[type=file]{min-width:0;padding:7px}
-      .beon-cover-btn{padding:8px 10px;white-space:nowrap}
-      .beon-cover-status{display:block;min-height:16px;font-size:10px;line-height:1.3;color:#8f859d}
-      .beon-cover-status.ok{color:#3fe0d0}
-      .beon-cover-status.err{color:#ff7cae}
-      @media(max-width:700px){.beon-cover-file-row{grid-template-columns:1fr}.beon-cover-btn{width:100%}}
+      .beon-labeled-field{min-width:0;display:grid;gap:5px}.beon-labeled-field>label{display:block;color:#a49ab5;font-size:11px;line-height:1.2;padding-left:2px}.beon-labeled-field>input,.beon-labeled-field>select,.beon-labeled-field>textarea{width:100%;box-sizing:border-box}.beon-labeled-field.beon-field-description{grid-column:1/-1;margin-top:0}.beon-cover-options{display:grid;gap:7px;margin-top:0;padding:9px 10px;border:1px solid #ffffff12;border-radius:10px;background:#0b0812}.beon-cover-option-title{font-size:10px;color:#c8bfd4;line-height:1.3}.beon-cover-url-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.beon-cover-url-row input{margin:0}.beon-cover-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}.beon-cover-file-row input[type=file]{min-width:0;padding:7px}.beon-cover-btn{padding:8px 10px;white-space:nowrap}.beon-cover-status{display:block;min-height:16px;font-size:10px;line-height:1.3;color:#8f859d}.beon-cover-status.ok{color:#3fe0d0}.beon-cover-status.err{color:#ff7cae}@media(max-width:700px){.beon-cover-file-row{grid-template-columns:1fr}.beon-cover-btn{width:100%}}
     `;
     document.head.appendChild(style);
   }
 
-  const slugify = value => String(value || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '') || 'evento';
-
-  function readAccessToken() {
-    const exactKey = 'sb-bellpluuhrrluwsgouob-auth-token';
-    try {
-      const exact = JSON.parse(localStorage.getItem(exactKey) || '{}');
-      const token = exact?.access_token || exact?.currentSession?.access_token || exact?.session?.access_token;
-      if (token) return token;
-    } catch (_) {}
-
-    for (let i = 0; i < localStorage.length; i += 1) {
-      const key = localStorage.key(i);
-      if (!key || !/^sb-.*-auth-token$/.test(key)) continue;
-      try {
-        const raw = JSON.parse(localStorage.getItem(key) || '{}');
-        const token = raw?.access_token || raw?.currentSession?.access_token || raw?.session?.access_token;
-        if (token) return token;
-      } catch (_) {}
-    }
-    return null;
-  }
-
-  function encodePath(path) {
-    return path.split('/').map(encodeURIComponent).join('/');
-  }
-
-  function setStatus(node, text, type = '') {
-    node.textContent = text;
-    node.className = `beon-cover-status ${type}`.trim();
-  }
-
-  async function uploadCover(file, eventName) {
-    const accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão do Admin não encontrada. Faça login novamente e tente de novo.');
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const slug = slugify(eventName);
-    const path = `event-covers/${slug}/${Date.now()}-${safeName}`;
-    const encoded = encodePath(path);
-
-    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encoded}`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': file.type,
-        'Cache-Control': '3600',
-        'x-upsert': 'false'
-      },
-      body: file
-    });
-
-    const text = await response.text();
-    if (!response.ok) {
-      let message = text;
-      try {
-        const payload = JSON.parse(text);
-        message = payload?.message || payload?.error || text;
-      } catch (_) {}
-      throw new Error(message || `HTTP ${response.status}`);
-    }
-
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encoded}`;
-
-    const verify = await fetch(publicUrl, { method: 'HEAD', cache: 'no-store' });
-    if (!verify.ok) {
-      throw new Error(`Upload concluído, mas o arquivo não ficou acessível (HTTP ${verify.status}).`);
-    }
-
-    return publicUrl;
-  }
-
-  function addCoverOptions(urlInput, wrapper) {
-    if (!urlInput || !wrapper || urlInput.dataset.beonCoverOptions === '1') return;
-    urlInput.dataset.beonCoverOptions = '1';
-    ensureStyles();
-
-    const box = document.createElement('div');
-    box.className = 'beon-cover-options';
-    box.innerHTML = `
-      <div class="beon-cover-option-title">Escolha uma opção para a capa</div>
-      <div>
-        <div class="beon-cover-option-title">URL da imagem</div>
-        <div class="beon-cover-url-row"></div>
-      </div>
-      <div>
-        <div class="beon-cover-option-title">Ou carregue um arquivo (JPG, JPEG, PNG, WEBP ou AVIF)</div>
-        <div class="beon-cover-file-row">
-          <input type="file" data-role="file" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif">
-          <button type="button" class="beon-cover-btn primary" data-role="upload">Carregar</button>
-        </div>
-      </div>
-      <div class="beon-cover-status" data-role="status"></div>
-    `;
-
-    const urlRow = box.querySelector('.beon-cover-url-row');
-    urlRow.appendChild(urlInput);
-
-    const fileInput = box.querySelector('[data-role="file"]');
-    const uploadButton = box.querySelector('[data-role="upload"]');
-    const status = box.querySelector('[data-role="status"]');
-
-    if (urlInput.value.trim()) setStatus(status, 'Usando a URL atual. Para trocar, substitua a URL ou carregue um arquivo.');
-
-    urlInput.addEventListener('input', () => {
-      if (urlInput.value.trim()) {
-        fileInput.value = '';
-        setStatus(status, 'URL selecionada. Clique em Salvar para aplicar.', 'ok');
-      } else {
-        setStatus(status, '');
-      }
-    });
-
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files?.[0];
-      if (!file) return;
-      if (!/^image\/(jpeg|png|webp|avif)$/.test(file.type)) {
-        fileInput.value = '';
-        setStatus(status, 'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
-        return;
-      }
-      if (file.size > 8 * 1024 * 1024) {
-        fileInput.value = '';
-        setStatus(status, 'Erro: a imagem deve ter no máximo 8 MB.', 'err');
-        return;
-      }
-      urlInput.value = '';
-      setStatus(status, `Arquivo selecionado: ${file.name}. Clique em Carregar.`);
-    });
-
-    const handleUpload = async () => {
-      const file = fileInput.files?.[0];
-      if (!file) {
-        setStatus(status, 'Erro: selecione uma imagem antes de clicar em Carregar.', 'err');
-        return;
-      }
-      if (!/^image\/(jpeg|png|webp|avif)$/.test(file.type)) {
-        setStatus(status, 'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
-        return;
-      }
-      if (file.size > 8 * 1024 * 1024) {
-        setStatus(status, 'Erro: a imagem deve ter no máximo 8 MB.', 'err');
-        return;
-      }
-
-      uploadButton.disabled = true;
-      fileInput.disabled = true;
-      setStatus(status, 'Enviando imagem... aguarde.');
-
-      try {
-        const eventName = document.getElementById('n')?.value.trim() || 'evento';
-        const publicUrl = await uploadCover(file, eventName);
-        urlInput.value = publicUrl;
-        fileInput.value = '';
-        setStatus(status, 'Concluído: imagem carregada e URL gerada. Clique em Salvar para aplicar ao evento.', 'ok');
-      } catch (error) {
-        setStatus(status, `Erro ao carregar: ${error?.message || 'falha desconhecida.'}`, 'err');
-      } finally {
-        uploadButton.disabled = false;
-        fileInput.disabled = false;
-      }
-    };
-
-    uploadButton.__beonHandleUpload = handleUpload;
-    wrapper.appendChild(box);
-  }
-
-  if (!window.__beonCoverUploadCapture) {
-    window.__beonCoverUploadCapture = true;
-    window.addEventListener('click', event => {
-      const button = event.target?.closest?.('[data-role="upload"]');
-      if (!button || typeof button.__beonHandleUpload !== 'function') return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      button.__beonHandleUpload();
-    }, true);
-  }
-
-  function applyLabels() {
-    const formGrid = document.querySelector('#form .grid');
-    if (!formGrid) return;
-    ensureStyles();
-
-    fields.forEach(([id, labelText]) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      if (el.id === 'desc') {
-        if (el.dataset.beonLabeled !== '1') {
-          const box = el.closest('.box');
-          if (!box) return;
-          const wrap = document.createElement('div');
-          wrap.className = 'beon-labeled-field beon-field-description';
-          const label = document.createElement('label');
-          label.htmlFor = id;
-          label.textContent = labelText;
-          el.parentNode.insertBefore(wrap, el);
-          wrap.appendChild(label);
-          wrap.appendChild(el);
-          el.dataset.beonLabeled = '1';
-        }
-        return;
-      }
-
-      let wrapper = el.closest('.beon-labeled-field');
-      if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'beon-labeled-field';
-        const label = document.createElement('label');
-        label.htmlFor = id;
-        label.textContent = labelText;
-        el.parentNode.insertBefore(wrapper, el);
-        wrapper.appendChild(label);
-        wrapper.appendChild(el);
-      }
-
-      el.dataset.beonLabeled = '1';
-      if (id === 'i') addCoverOptions(el, wrapper);
-    });
-  }
-
-  function start() {
-    applyLabels();
-    const observer = new MutationObserver(applyLabels);
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
-  else start();
+  const slugify = value => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'evento';
+  function readAccessToken(){const exactKey='sb-bellpluuhrrluwsgouob-auth-token';try{const exact=JSON.parse(localStorage.getItem(exactKey)||'{}');const token=exact?.access_token||exact?.currentSession?.access_token||exact?.session?.access_token;if(token)return token;}catch(_){}for(let i=0;i<localStorage.length;i+=1){const key=localStorage.key(i);if(!key||!/^sb-.*-auth-token$/.test(key))continue;try{const raw=JSON.parse(localStorage.getItem(key)||'{}');const token=raw?.access_token||raw?.currentSession?.access_token||raw?.session?.access_token;if(token)return token;}catch(_){}}return null;}
+  function encodePath(path){return path.split('/').map(encodeURIComponent).join('/');}
+  function setStatus(node,text,type=''){node.textContent=text;node.className=`beon-cover-status ${type}`.trim();}
+  async function uploadCover(file,eventName){const accessToken=readAccessToken();if(!accessToken)throw new Error('Sessão do Admin não encontrada. Faça login novamente e tente de novo.');const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const slug=slugify(eventName);const path=`event-covers/${slug}/${Date.now()}-${safeName}`;const encoded=encodePath(path);const response=await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encoded}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${accessToken}`,'Content-Type':file.type,'Cache-Control':'3600','x-upsert':'false'},body:file});const text=await response.text();if(!response.ok){let message=text;try{const payload=JSON.parse(text);message=payload?.message||payload?.error||text;}catch(_){}throw new Error(message||`HTTP ${response.status}`);}const publicUrl=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encoded}`;const verify=await fetch(publicUrl,{method:'HEAD',cache:'no-store'});if(!verify.ok)throw new Error(`Upload concluído, mas o arquivo não ficou acessível (HTTP ${verify.status}).`);return publicUrl;}
+  function addCoverOptions(urlInput,wrapper){if(!urlInput||!wrapper||urlInput.dataset.beonCoverOptions==='1')return;urlInput.dataset.beonCoverOptions='1';ensureStyles();const box=document.createElement('div');box.className='beon-cover-options';box.innerHTML=`<div class="beon-cover-option-title">Escolha uma opção para a capa</div><div><div class="beon-cover-option-title">URL da imagem</div><div class="beon-cover-url-row"></div></div><div><div class="beon-cover-option-title">Ou carregue um arquivo (JPG, JPEG, PNG, WEBP ou AVIF)</div><div class="beon-cover-file-row"><input type="file" data-role="file" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif"><button type="button" class="beon-cover-btn primary" data-role="upload">Carregar</button></div></div><div class="beon-cover-status" data-role="status"></div>`;const urlRow=box.querySelector('.beon-cover-url-row');urlRow.appendChild(urlInput);const fileInput=box.querySelector('[data-role="file"]');const uploadButton=box.querySelector('[data-role="upload"]');const status=box.querySelector('[data-role="status"]');if(urlInput.value.trim())setStatus(status,'Usando a URL atual. Para trocar, substitua a URL ou carregue um arquivo.');urlInput.addEventListener('input',()=>{if(urlInput.value.trim()){fileInput.value='';setStatus(status,'URL selecionada. Clique em Salvar para aplicar.','ok');}else setStatus(status,'');});fileInput.addEventListener('change',()=>{const file=fileInput.files?.[0];if(!file)return;if(!/^image\/(jpeg|png|webp|avif)$/.test(file.type)){fileInput.value='';setStatus(status,'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.','err');return;}if(file.size>8*1024*1024){fileInput.value='';setStatus(status,'Erro: a imagem deve ter no máximo 8 MB.','err');return;}urlInput.value='';setStatus(status,`Arquivo selecionado: ${file.name}. Clique em Carregar.`);});const handleUpload=async()=>{const file=fileInput.files?.[0];if(!file){setStatus(status,'Erro: selecione uma imagem antes de clicar em Carregar.','err');return;}if(!/^image\/(jpeg|png|webp|avif)$/.test(file.type)){setStatus(status,'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.','err');return;}if(file.size>8*1024*1024){setStatus(status,'Erro: a imagem deve ter no máximo 8 MB.','err');return;}uploadButton.disabled=true;fileInput.disabled=true;setStatus(status,'Enviando imagem... aguarde.');try{const eventName=document.getElementById('n')?.value.trim()||'evento';const publicUrl=await uploadCover(file,eventName);urlInput.value=publicUrl;fileInput.value='';setStatus(status,'Concluído: imagem carregada e URL gerada. Clique em Salvar para aplicar ao evento.','ok');}catch(error){setStatus(status,`Erro ao carregar: ${error?.message||'falha desconhecida.'}`,'err');}finally{uploadButton.disabled=false;fileInput.disabled=false;}};uploadButton.__beonHandleUpload=handleUpload;wrapper.appendChild(box);}
+  if(!window.__beonCoverUploadCapture){window.__beonCoverUploadCapture=true;window.addEventListener('click',event=>{const button=event.target?.closest?.('[data-role="upload"]');if(!button||typeof button.__beonHandleUpload!=='function')return;event.preventDefault();event.stopImmediatePropagation();button.__beonHandleUpload();},true);}
+  function applyLabels(){const formGrid=document.querySelector('#form .grid');if(!formGrid)return;ensureStyles();fields.forEach(([id,labelText])=>{const el=document.getElementById(id);if(!el)return;if(el.id==='desc'){if(el.dataset.beonLabeled!=='1'){const box=el.closest('.box');if(!box)return;const wrap=document.createElement('div');wrap.className='beon-labeled-field beon-field-description';const label=document.createElement('label');label.htmlFor=id;label.textContent=labelText;el.parentNode.insertBefore(wrap,el);wrap.appendChild(label);wrap.appendChild(el);el.dataset.beonLabeled='1';}return;}let wrapper=el.closest('.beon-labeled-field');if(!wrapper){wrapper=document.createElement('div');wrapper.className='beon-labeled-field';const label=document.createElement('label');label.htmlFor=id;label.textContent=labelText;el.parentNode.insertBefore(wrapper,el);wrapper.appendChild(label);wrapper.appendChild(el);}el.dataset.beonLabeled='1';if(id==='i')addCoverOptions(el,wrapper);});}
+  function start(){applyLabels();const observer=new MutationObserver(applyLabels);observer.observe(document.body,{childList:true,subtree:true});if(!window.__beonSocialVideosLoader){window.__beonSocialVideosLoader=true;const script=document.createElement('script');script.src='assets/admin-social-videos-v1.js?v=1';script.defer=true;document.head.appendChild(script);}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
