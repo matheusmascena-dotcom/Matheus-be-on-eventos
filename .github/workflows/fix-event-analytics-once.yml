@@ -1,0 +1,54 @@
+name: Fix event analytics bootstrap
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-event-html:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch event analytics dependency
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('event.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
+          target = '<script src="assets/beon-event-v4.js?v=34d69a3921e674e80b5b14c33ed675de5c01b8ed" defer></script>'
+          if marker not in s:
+              if target not in s:
+                  raise SystemExit('event analytics script tag not found; aborting')
+              s = s.replace(target, marker + target, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patch
+        shell: bash
+        run: |
+          if git diff --quiet -- event.html; then
+            echo 'No change needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add event.html
+          git commit -m 'fix: load Supabase before event analytics'
+          git push origin HEAD:main
+      - name: Remove one-time workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/fix-event-analytics-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/fix-event-analytics-once.yml
+          git commit -m 'chore: remove one-time analytics fix workflow'
+          git push origin HEAD:main
