@@ -1,0 +1,1 @@
+Backup lógico criado antes da implementação de vídeos sociais por evento. O ponto de restauração é o commit main existente imediatamente antes desta alteração. Não alterar este arquivo.
