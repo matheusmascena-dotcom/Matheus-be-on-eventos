@@ -1,0 +1,52 @@
+name: Apply Admin field labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-admin-field-labels.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Inject field-label script
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('admin-v4.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="assets/admin-field-labels-v1.js?v=1"></script>'
+          s = s.replace(tag, '')
+          marker = '</body>'
+          if marker not in s:
+              raise SystemExit('admin-v4.html: </body> not found')
+          s = s.replace(marker, tag + marker, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit admin labels
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add admin-v4.html
+          git commit -m 'feat: identificar campos do formulário de eventos' || echo 'No changes to commit.'
+          git push origin HEAD:main
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-admin-field-labels.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/apply-admin-field-labels.yml
+          git commit -m 'chore: remover workflow temporário de labels' || echo 'No workflow removal commit needed.'
+          git push origin HEAD:main
