@@ -47,6 +47,13 @@
     .replace(/(^-|-$)/g, '') || 'evento';
 
   function readAccessToken() {
+    const exactKey = 'sb-bellpluuhrrluwsgouob-auth-token';
+    try {
+      const exact = JSON.parse(localStorage.getItem(exactKey) || '{}');
+      const token = exact?.access_token || exact?.currentSession?.access_token || exact?.session?.access_token;
+      if (token) return token;
+    } catch (_) {}
+
     for (let i = 0; i < localStorage.length; i += 1) {
       const key = localStorage.key(i);
       if (!key || !/^sb-.*-auth-token$/.test(key)) continue;
@@ -92,11 +99,21 @@
     const text = await response.text();
     if (!response.ok) {
       let message = text;
-      try { message = JSON.parse(text)?.message || JSON.parse(text)?.error || text; } catch (_) {}
+      try {
+        const payload = JSON.parse(text);
+        message = payload?.message || payload?.error || text;
+      } catch (_) {}
       throw new Error(message || `HTTP ${response.status}`);
     }
 
-    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encoded}`;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encoded}`;
+
+    const verify = await fetch(publicUrl, { method: 'HEAD', cache: 'no-store' });
+    if (!verify.ok) {
+      throw new Error(`Upload concluído, mas o arquivo não ficou acessível (HTTP ${verify.status}).`);
+    }
+
+    return publicUrl;
   }
 
   function addCoverOptions(urlInput, wrapper) {
@@ -157,10 +174,7 @@
       setStatus(status, `Arquivo selecionado: ${file.name}. Clique em Carregar.`);
     });
 
-    uploadButton.addEventListener('click', async event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
+    const handleUpload = async () => {
       const file = fileInput.files?.[0];
       if (!file) {
         setStatus(status, 'Erro: selecione uma imagem antes de clicar em Carregar.', 'err');
@@ -184,16 +198,28 @@
         const publicUrl = await uploadCover(file, eventName);
         urlInput.value = publicUrl;
         fileInput.value = '';
-        setStatus(status, 'Concluído: imagem carregada. A URL foi preenchida. Clique em Salvar para aplicar ao evento.', 'ok');
+        setStatus(status, 'Concluído: imagem carregada e URL gerada. Clique em Salvar para aplicar ao evento.', 'ok');
       } catch (error) {
         setStatus(status, `Erro ao carregar: ${error?.message || 'falha desconhecida.'}`, 'err');
       } finally {
         uploadButton.disabled = false;
         fileInput.disabled = false;
       }
-    }, true);
+    };
 
+    uploadButton.__beonHandleUpload = handleUpload;
     wrapper.appendChild(box);
+  }
+
+  if (!window.__beonCoverUploadCapture) {
+    window.__beonCoverUploadCapture = true;
+    window.addEventListener('click', event => {
+      const button = event.target?.closest?.('[data-role="upload"]');
+      if (!button || typeof button.__beonHandleUpload !== 'function') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      button.__beonHandleUpload();
+    }, true);
   }
 
   function applyLabels() {
