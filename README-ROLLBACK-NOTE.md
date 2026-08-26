@@ -1,0 +1,1 @@
+Rollback reference: the main branch was restored to commit 672cd707942918874bb5bd0821a6460c42941178 to retain today's SEO/event improvements while removing the Admin field-label and image-upload changes. Current state before rollback is preserved in branch backup-before-upload-rollback-2026-08-26.
