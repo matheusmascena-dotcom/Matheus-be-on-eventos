@@ -24,16 +24,14 @@
       .beon-labeled-field>input,.beon-labeled-field>select,.beon-labeled-field>textarea{width:100%;box-sizing:border-box}
       .beon-labeled-field.beon-field-description{grid-column:1/-1;margin-top:0}
       .beon-cover-options{display:grid;gap:8px;margin-top:0;padding:10px 11px;border:1px solid #ffffff12;border-radius:10px;background:#0b0812}
-      .beon-cover-option-title{font-size:11px;color:#c8bfd4}
+      .beon-cover-option-title{font-size:11px;color:#c8bfd4;line-height:1.25}
       .beon-cover-url-row,.beon-cover-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
       .beon-cover-url-row input{margin:0}
       .beon-cover-file-row input[type=file]{min-width:0;padding:8px}
-      .beon-cover-btn{padding:9px 11px}
+      .beon-cover-btn{padding:9px 11px;white-space:nowrap}
       .beon-cover-status{min-height:17px;font-size:11px;color:#8f859d}
       .beon-cover-status.ok{color:#3fe0d0}
       .beon-cover-status.err{color:#ff7cae}
-      .beon-cover-preview{display:none;max-width:220px;max-height:140px;object-fit:contain;border-radius:8px;border:1px solid #ffffff12;background:#06040b}
-      .beon-cover-preview.show{display:block}
       @media(max-width:700px){.beon-cover-url-row,.beon-cover-file-row{grid-template-columns:1fr}.beon-cover-btn{width:100%}}
     `;
     document.head.appendChild(style);
@@ -77,7 +75,6 @@
         </div>
       </div>
       <div class="beon-cover-status" data-role="status"></div>
-      <img class="beon-cover-preview" data-role="preview" alt="Pré-visualização da capa">
     `;
 
     const urlRow = box.querySelector('[data-role="url-row"]');
@@ -86,33 +83,21 @@
     const fileInput = box.querySelector('[data-role="file"]');
     const uploadButton = box.querySelector('[data-role="upload"]');
     const status = box.querySelector('[data-role="status"]');
-    const preview = box.querySelector('[data-role="preview"]');
 
     const setStatus = (text, type = '') => {
       status.textContent = text;
       status.className = `beon-cover-status ${type}`.trim();
     };
 
-    const setPreview = (src) => {
-      if (!src) {
-        preview.removeAttribute('src');
-        preview.classList.remove('show');
-        return;
-      }
-      preview.onload = () => preview.classList.add('show');
-      preview.onerror = () => preview.classList.remove('show');
-      preview.src = src;
-    };
-
-    setPreview(urlInput.value.trim());
+    if (urlInput.value.trim()) {
+      setStatus('Usando a URL atual. Para trocar, substitua a URL ou carregue um arquivo.', '');
+    }
 
     urlInput.addEventListener('input', () => {
       if (urlInput.value.trim()) {
         fileInput.value = '';
-        setPreview(urlInput.value.trim());
         setStatus('URL selecionada. Clique em Salvar para aplicar.', 'ok');
       } else {
-        setPreview('');
         setStatus('');
       }
     });
@@ -129,14 +114,7 @@
         return setStatus('A imagem deve ter no máximo 8 MB.', 'err');
       }
       urlInput.value = '';
-      urlInput.dispatchEvent(new Event('input', { bubbles: true }));
-      const objectUrl = URL.createObjectURL(file);
-      setPreview(objectUrl);
       setStatus('Arquivo selecionado. Clique em Carregar para enviar.', '');
-      preview.onload = () => {
-        preview.classList.add('show');
-        URL.revokeObjectURL(objectUrl);
-      };
     });
 
     uploadButton.addEventListener('click', async () => {
@@ -173,8 +151,7 @@
         urlInput.value = publicUrl;
         urlInput.dispatchEvent(new Event('input', { bubbles: true }));
         fileInput.value = '';
-        setPreview(publicUrl);
-        setStatus('Imagem carregada com sucesso. Clique em Salvar para aplicar ao evento.', 'ok');
+        setStatus('Imagem carregada. A URL foi preenchida automaticamente; clique em Salvar para aplicar.', 'ok');
       } catch (error) {
         setStatus(error?.message || 'Falha ao carregar a imagem.', 'err');
       } finally {
