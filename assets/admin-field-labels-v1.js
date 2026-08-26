@@ -1,6 +1,7 @@
 (() => {
   const SUPABASE_URL = 'https://bellpluuhrrluwsgouob.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
+  const BUCKET = 'event-media';
 
   const fields = [
     ['n', 'Nome do evento'],
@@ -24,7 +25,7 @@
       .beon-labeled-field>input,.beon-labeled-field>select,.beon-labeled-field>textarea{width:100%;box-sizing:border-box}
       .beon-labeled-field.beon-field-description{grid-column:1/-1;margin-top:0}
       .beon-cover-options{display:grid;gap:7px;margin-top:0;padding:9px 10px;border:1px solid #ffffff12;border-radius:10px;background:#0b0812}
-      .beon-cover-option-title{font-size:10px;color:#c8bfd4;line-height:1.25}
+      .beon-cover-option-title{font-size:10px;color:#c8bfd4;line-height:1.3}
       .beon-cover-url-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
       .beon-cover-url-row input{margin:0}
       .beon-cover-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}
@@ -38,20 +39,65 @@
     document.head.appendChild(style);
   }
 
-  function getSupabase() {
-    if (!window.supabase?.createClient) return null;
-    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-    });
-  }
-
-  const slugify = (value) => String(value || '')
+  const slugify = value => String(value || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    || 'evento';
+    .replace(/(^-|-$)/g, '') || 'evento';
+
+  function readAccessToken() {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !/^sb-.*-auth-token$/.test(key)) continue;
+      try {
+        const raw = JSON.parse(localStorage.getItem(key) || '{}');
+        const token = raw?.access_token || raw?.currentSession?.access_token || raw?.session?.access_token;
+        if (token) return token;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function encodePath(path) {
+    return path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  function setStatus(node, text, type = '') {
+    node.textContent = text;
+    node.className = `beon-cover-status ${type}`.trim();
+  }
+
+  async function uploadCover(file, eventName) {
+    const accessToken = readAccessToken();
+    if (!accessToken) throw new Error('Sessão do Admin não encontrada. Faça login novamente e tente de novo.');
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const slug = slugify(eventName);
+    const path = `event-covers/${slug}/${Date.now()}-${safeName}`;
+    const encoded = encodePath(path);
+
+    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encoded}`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': file.type,
+        'Cache-Control': '3600',
+        'x-upsert': 'false'
+      },
+      body: file
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      let message = text;
+      try { message = JSON.parse(text)?.message || JSON.parse(text)?.error || text; } catch (_) {}
+      throw new Error(message || `HTTP ${response.status}`);
+    }
+
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encoded}`;
+  }
 
   function addCoverOptions(urlInput, wrapper) {
     if (!urlInput || !wrapper || urlInput.dataset.beonCoverOptions === '1') return;
@@ -64,7 +110,7 @@
       <div class="beon-cover-option-title">Escolha uma opção para a capa</div>
       <div>
         <div class="beon-cover-option-title">URL da imagem</div>
-        <div class="beon-cover-url-row" data-role="url-row"></div>
+        <div class="beon-cover-url-row"></div>
       </div>
       <div>
         <div class="beon-cover-option-title">Ou carregue um arquivo (JPG, JPEG, PNG, WEBP ou AVIF)</div>
@@ -76,31 +122,21 @@
       <div class="beon-cover-status" data-role="status"></div>
     `;
 
-    const urlRow = box.querySelector('[data-role="url-row"]');
+    const urlRow = box.querySelector('.beon-cover-url-row');
     urlRow.appendChild(urlInput);
+
     const fileInput = box.querySelector('[data-role="file"]');
     const uploadButton = box.querySelector('[data-role="upload"]');
     const status = box.querySelector('[data-role="status"]');
 
-    const setStatus = (text, type = '') => {
-      status.textContent = text;
-      status.className = `beon-cover-status ${type}`.trim();
-    };
-
-    const clearFileChoice = () => {
-      fileInput.value = '';
-    };
-
-    if (urlInput.value.trim()) {
-      setStatus('Usando a URL atual. Para trocar, substitua a URL ou carregue um arquivo.', '');
-    }
+    if (urlInput.value.trim()) setStatus(status, 'Usando a URL atual. Para trocar, substitua a URL ou carregue um arquivo.');
 
     urlInput.addEventListener('input', () => {
       if (urlInput.value.trim()) {
-        clearFileChoice();
-        setStatus('URL selecionada. Clique em Salvar para aplicar.', 'ok');
+        fileInput.value = '';
+        setStatus(status, 'URL selecionada. Clique em Salvar para aplicar.', 'ok');
       } else {
-        setStatus('');
+        setStatus(status, '');
       }
     });
 
@@ -108,70 +144,49 @@
       const file = fileInput.files?.[0];
       if (!file) return;
       if (!/^image\/(jpeg|png|webp|avif)$/.test(file.type)) {
-        clearFileChoice();
-        return setStatus('Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
+        fileInput.value = '';
+        setStatus(status, 'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
+        return;
       }
       if (file.size > 8 * 1024 * 1024) {
-        clearFileChoice();
-        return setStatus('Erro: a imagem deve ter no máximo 8 MB.', 'err');
+        fileInput.value = '';
+        setStatus(status, 'Erro: a imagem deve ter no máximo 8 MB.', 'err');
+        return;
       }
-      setStatus(`Arquivo selecionado: ${file.name}. Clique em Carregar.`, '');
+      urlInput.value = '';
+      setStatus(status, `Arquivo selecionado: ${file.name}. Clique em Carregar.`);
     });
 
-    uploadButton.addEventListener('click', async (event) => {
+    uploadButton.addEventListener('click', async event => {
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
 
       const file = fileInput.files?.[0];
       if (!file) {
-        setStatus('Erro: selecione uma imagem antes de clicar em Carregar.', 'err');
+        setStatus(status, 'Erro: selecione uma imagem antes de clicar em Carregar.', 'err');
         return;
       }
       if (!/^image\/(jpeg|png|webp|avif)$/.test(file.type)) {
-        setStatus('Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
+        setStatus(status, 'Erro: formato não suportado. Use JPG, JPEG, PNG, WEBP ou AVIF.', 'err');
         return;
       }
       if (file.size > 8 * 1024 * 1024) {
-        setStatus('Erro: a imagem deve ter no máximo 8 MB.', 'err');
-        return;
-      }
-
-      const sb = getSupabase();
-      if (!sb) {
-        setStatus('Erro: o serviço de armazenamento não foi carregado. Atualize a página e faça login novamente.', 'err');
+        setStatus(status, 'Erro: a imagem deve ter no máximo 8 MB.', 'err');
         return;
       }
 
       uploadButton.disabled = true;
       fileInput.disabled = true;
-      setStatus('Enviando imagem... aguarde.', '');
+      setStatus(status, 'Enviando imagem... aguarde.');
 
       try {
-        const sessionResult = await sb.auth.getSession();
-        if (sessionResult.error) throw sessionResult.error;
-        if (!sessionResult.data?.session) throw new Error('Sua sessão do Admin expirou. Faça login novamente.');
-
-        const nameInput = document.getElementById('n');
-        const slug = slugify(nameInput?.value || 'evento');
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `event-covers/${slug}/${Date.now()}-${safeName}`;
-
-        const uploadResult = await sb.storage.from('event-media').upload(path, file, {
-          upsert: false,
-          contentType: file.type,
-          cacheControl: '3600'
-        });
-        if (uploadResult.error) throw uploadResult.error;
-
-        const publicResult = sb.storage.from('event-media').getPublicUrl(path);
-        const publicUrl = publicResult?.data?.publicUrl || '';
-        if (!publicUrl) throw new Error('O upload foi concluído, mas a URL pública não foi gerada.');
-
+        const eventName = document.getElementById('n')?.value.trim() || 'evento';
+        const publicUrl = await uploadCover(file, eventName);
         urlInput.value = publicUrl;
-        clearFileChoice();
-        setStatus('Concluído: imagem carregada com sucesso. Clique em Salvar para aplicar ao evento.', 'ok');
+        fileInput.value = '';
+        setStatus(status, 'Concluído: imagem carregada. A URL foi preenchida. Clique em Salvar para aplicar ao evento.', 'ok');
       } catch (error) {
-        setStatus(`Erro ao carregar: ${error?.message || 'falha desconhecida.'}`, 'err');
+        setStatus(status, `Erro ao carregar: ${error?.message || 'falha desconhecida.'}`, 'err');
       } finally {
         uploadButton.disabled = false;
         fileInput.disabled = false;
@@ -219,7 +234,7 @@
         wrapper.appendChild(el);
       }
 
-      if (el.dataset.beonLabeled !== '1') el.dataset.beonLabeled = '1';
+      el.dataset.beonLabeled = '1';
       if (id === 'i') addCoverOptions(el, wrapper);
     });
   }
@@ -230,9 +245,6 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start, { once: true });
-  } else {
-    start();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
 })();
