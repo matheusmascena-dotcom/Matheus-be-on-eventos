@@ -1,10 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/the-grid-outworld.html</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/adriatique-x-sao-paulo.html</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/crochestra-brasil.html</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/music-on-sao-paulo.html</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/unreal-x-the-grid.html</loc></url>
-  <url><loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/one-life-sao-paulo.html</loc></url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/the-grid-outworld.html</loc>
+    <lastmod>2026-08-24</lastmod>
+  </url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/adriatique-x-sao-paulo.html</loc>
+    <lastmod>2026-08-28</lastmod>
+  </url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/crochestra-brasil.html</loc>
+    <lastmod>2026-08-24</lastmod>
+  </url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/music-on-sao-paulo.html</loc>
+    <lastmod>2026-08-26</lastmod>
+  </url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/unreal-x-the-grid.html</loc>
+    <lastmod>2026-08-26</lastmod>
+  </url>
+  <url>
+    <loc>https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/eventos/one-life-sao-paulo.html</loc>
+    <lastmod>2026-08-24</lastmod>
+  </url>
 </urlset>
