@@ -77,3 +77,5 @@ jobs:
             git commit -m 'chore: sincronizar paginas SEO e sitemaps [beon-v5]'
             git push
           fi
+
+# Manual sync trigger marker: no-op change to start a real V5 synchronization run.
