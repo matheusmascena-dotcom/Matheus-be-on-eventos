@@ -222,6 +222,59 @@
     }, true);
   }
 
+  function captureStableSlug() {
+    const form = document.getElementById('form');
+    const nameInput = document.getElementById('n');
+    const save = document.getElementById('save');
+    if (!form || !nameInput || !save || save.dataset.beonStableSlugWrapped === '1') return;
+    if (!nameInput.value.trim()) return;
+    save.dataset.beonStableSlugWrapped = '1';
+
+    const originalName = nameInput.value.trim();
+    let stableSlug = null;
+
+    const locateEvent = async () => {
+      const token = readAccessToken();
+      if (!token) return null;
+      const query = new URLSearchParams({ select: 'id,slug', name: `eq.${originalName}`, limit: '1' });
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/events?${query.toString()}`, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}` }
+        });
+        if (!response.ok) return null;
+        const rows = await response.json();
+        return rows?.[0]?.slug || null;
+      } catch (_) { return null; }
+    };
+
+    locateEvent().then(slug => {
+      if (slug) stableSlug = slug;
+    });
+
+    const originalClick = save.onclick;
+    if (typeof originalClick !== 'function') return;
+
+    save.onclick = async function (event) {
+      const result = await originalClick.call(this, event);
+      const desired = stableSlug;
+      if (!desired) return result;
+      const token = readAccessToken();
+      if (!token) return result;
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/events?slug=eq.${encodeURIComponent(slugify(nameInput.value.trim()))}`, {
+          method: 'PATCH',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ slug: desired })
+        });
+      } catch (_) {}
+      return result;
+    };
+  }
+
   function applyLabels() {
     const formGrid = document.querySelector('#form .grid');
     if (!formGrid) return;
@@ -263,6 +316,8 @@
       el.dataset.beonLabeled = '1';
       if (id === 'i') addCoverOptions(el, wrapper);
     });
+
+    captureStableSlug();
   }
 
   function start() {
