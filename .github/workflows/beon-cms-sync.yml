@@ -6,6 +6,7 @@ on:
       - '.github/workflows/beon-cms-sync.yml'
       - 'assets/beon-v4.js'
       - 'assets/beon-event-v4.js'
+      - 'assets/beon-gallery-live-v1.js'
       - 'assets/admin-v4-route.js'
   workflow_dispatch:
 permissions:
@@ -31,7 +32,7 @@ jobs:
           sha=os.environ['SHA']
           for file, scripts in {
               'index.html': ['assets/admin-v4-route.js','assets/beon-v4.js'],
-              'event.html': ['assets/beon-event-v4.js']
+              'event.html': ['assets/beon-event-v4.js','assets/beon-gallery-live-v1.js']
           }.items():
               p=Path(file)
               if not p.exists():
@@ -48,6 +49,7 @@ jobs:
           grep -F 'assets/admin-v4-route.js' index.html
           grep -F 'assets/beon-v4.js' index.html
           grep -F 'assets/beon-event-v4.js' event.html
+          grep -F 'assets/beon-gallery-live-v1.js' event.html
       - name: Publicar
         run: |
           git config user.name 'github-actions[bot]'
