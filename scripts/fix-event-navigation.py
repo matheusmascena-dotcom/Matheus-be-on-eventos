@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 
+# Trigger patch after workflow installation.
 home = Path('assets/beon-v4.js')
 s = home.read_text(encoding='utf-8')
 needle = "    grid.querySelectorAll('.card').forEach(card => {\n      const slug=card.dataset.slug, id=card.dataset.eventId, fav=card.querySelector('.fav');"
