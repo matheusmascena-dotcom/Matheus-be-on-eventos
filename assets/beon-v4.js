@@ -58,6 +58,9 @@
 
     grid.querySelectorAll('.card').forEach(card => {
       const slug=card.dataset.slug, id=card.dataset.eventId, fav=card.querySelector('.fav');
+      const eventData = events.find(e => e.slug === slug);
+      const cachePreview = () => { try { if (eventData) sessionStorage.setItem('beon-event-preview:'+slug, JSON.stringify(eventData)); } catch {} };
+      card.querySelectorAll('a').forEach(a => a.addEventListener('click', cachePreview));
       fav.onclick = ev => { ev.stopPropagation(); let a=getFavs(); a=a.includes(slug)?a.filter(x=>x!==slug):[...a,slug]; saveFavs(a); fav.classList.toggle('on'); fav.textContent=a.includes(slug)?'♥':'♡'; metric('favorite_toggle', id); };
       card.onclick = ev => { if (ev.target.closest('a,button')) return; location.href=realized ? `eventos/${encodeURIComponent(slug)}.html` : 'event.html?event='+encodeURIComponent(slug); };
     });
