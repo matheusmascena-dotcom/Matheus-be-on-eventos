@@ -1,0 +1,119 @@
+name: BeOn Gallery Admin Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-gallery-admin-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aplicar melhorias da Galeria
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('admin-v4.html')
+          text = path.read_text(encoding='utf-8')
+
+          new_gallery = r'''async function showGallery(){
+            const stateKey='beon_gallery_state_v2';
+            let saved={};
+            try{saved=JSON.parse(localStorage.getItem(stateKey)||'{}')}catch{}
+            const evr=await sb.from('events').select('id,name').order('event_date');
+            if(evr.error){setMsg(evr.error.message,true);return}
+            const events=evr.data||[];
+            const preferredEvent=saved.eventId&&events.some(e=>e.id===saved.eventId)?saved.eventId:(events[0]?.id||'');
+            $('panel').innerHTML=`<div class="row" style="justify-content:space-between;gap:10px"><div><h2 style="margin:0">Galerias</h2><div class="muted">Envie várias fotos de uma vez e continue de onde parou.</div></div><span id="galleryCount" class="status"></span></div><select id="ge" style="margin-top:12px"></select><div class="grid" style="margin-top:10px"><div><input id="gf" type="file" accept="image/*" multiple><div id="fileHint" class="help">Você pode selecionar várias fotos ao mesmo tempo.</div></div><input id="cr" placeholder="Crédito / fotógrafo" value="${esc(saved.credit||'')}"><input id="cu" placeholder="Instagram do fotógrafo" value="${esc(saved.creditUrl||'')}"></div><div class="row" style="margin-top:10px"><button id="up" class="primary">Enviar fotos</button><button id="clearGalleryFields" type="button">Limpar dados</button><span id="galleryStatus" class="muted"></span></div><div id="photos" class="thumbs" style="margin-top:12px"></div>`;
+            const ge=$('ge'),gf=$('gf'),cr=$('cr'),cu=$('cu'),up=$('up'),status=$('galleryStatus'),hint=$('fileHint'),photos=$('photos'),count=$('galleryCount');
+            ge.innerHTML=events.map(e=>`<option value="${esc(e.id)}" ${e.id===preferredEvent?'selected':''}>${esc(e.name)}</option>`).join('');
+            const saveState=()=>{try{localStorage.setItem(stateKey,JSON.stringify({eventId:ge.value,credit:cr.value,creditUrl:cu.value}))}catch{}};
+            ge.onchange=()=>{saveState();refresh()};cr.oninput=saveState;cu.oninput=saveState;
+            $('clearGalleryFields').onclick=()=>{cr.value='';cu.value='';saveState();status.textContent='Dados de crédito limpos.'};
+            gf.onchange=()=>{const n=gf.files?.length||0;hint.textContent=n?`${n} foto${n===1?'':'s'} selecionada${n===1?'':'s'}.`:'Você pode selecionar várias fotos ao mesmo tempo.'};
+            async function refresh(){
+              const eventId=ge.value;if(!eventId){photos.innerHTML='';count.textContent='';return}
+              photos.innerHTML='<div class="muted">Carregando galeria…</div>';
+              const r=await sb.from('event_gallery_photos').select('id,event_id,src_url,photo_name,position,is_featured,credit_label,credit_url').eq('event_id',eventId).order('position');
+              if(r.error){photos.innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+              const data=r.data||[];count.textContent=`${data.length} foto${data.length===1?'':'s'}`;
+              photos.innerHTML=data.map(p=>`<div class="thumb"><img src="${esc(p.src_url)}" loading="lazy" decoding="async"><div class="muted">#${p.position+1}${p.is_featured?' · destaque':''}</div><button data-x="${p.id}" data-src="${esc(p.src_url)}" style="width:100%;margin-top:6px">Excluir</button></div>`).join('')||'<div class="muted">Nenhuma foto cadastrada para este evento.</div>';
+              photos.querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+                if(!confirm('Excluir esta foto?'))return;
+                b.disabled=true;
+                const src=b.dataset.src||'';
+                const marker='/storage/v1/object/public/event-media/';
+                const storagePath=src.includes(marker)?decodeURIComponent(src.split(marker)[1]):null;
+                if(storagePath){const rr=await sb.storage.from('event-media').remove([storagePath]);if(rr.error){setMsg(rr.error.message,true);b.disabled=false;return}}
+                const rr=await sb.from('event_gallery_photos').delete().eq('id',b.dataset.x);
+                if(rr.error){setMsg(rr.error.message,true);b.disabled=false;return}
+                refresh();
+              });
+            }
+            up.onclick=async()=>{
+              const eventId=ge.value,files=[...(gf.files||[])];
+              if(!eventId||!files.length){status.textContent='Selecione pelo menos uma foto.';return}
+              up.disabled=true;gf.disabled=true;status.textContent=`Preparando ${files.length} foto${files.length===1?'':'s'}…`;
+              try{
+                const q=await sb.from('event_gallery_photos').select('position').eq('event_id',eventId).order('position',{ascending:false}).limit(1);
+                if(q.error)throw q.error;
+                let pos=(q.data?.[0]?.position??-1)+1;
+                let ok=0,failed=[];
+                for(let start=0;start<files.length;start+=4){
+                  const batch=files.slice(start,start+4);
+                  const results=await Promise.all(batch.map(async(f,idx)=>{
+                    const safe=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+                    const path=`${eventId}/${Date.now()}-${crypto.randomUUID()}-${idx}-${safe}`;
+                    const u=await sb.storage.from('event-media').upload(path,f,{upsert:false,cacheControl:'31536000',contentType:f.type||undefined});
+                    if(u.error)return {ok:false,name:f.name,error:u.error,path};
+                    const url=sb.storage.from('event-media').getPublicUrl(path).data.publicUrl;
+                    const p=pos+idx;
+                    const ins=await sb.from('event_gallery_photos').insert({event_id:eventId,src_url:url,photo_name:f.name,credit_label:cr.value.trim(),credit_url:cu.value.trim(),position:p,is_featured:p<8});
+                    if(ins.error){await sb.storage.from('event-media').remove([path]);return {ok:false,name:f.name,error:ins.error,path};}
+                    return {ok:true,name:f.name};
+                  }));
+                  results.forEach(r=>r.ok?ok++:failed.push(r));pos+=batch.length;
+                  status.textContent=`Enviadas ${Math.min(start+batch.length,files.length)} de ${files.length}…`;
+                }
+                gf.value='';hint.textContent='Você pode selecionar várias fotos ao mesmo tempo.';
+                status.textContent=failed.length?`${ok} enviada${ok===1?'':'s'}; ${failed.length} com erro.`:`${ok} foto${ok===1?'':'s'} enviada${ok===1?'':'s'} com sucesso.`;
+                refresh();
+              }catch(err){status.textContent=err?.message||'Falha no envio.';setMsg(err?.message||'Falha no envio.',true)}finally{up.disabled=false;gf.disabled=false}
+            };
+            refresh();
+          }
+          '''
+
+          pattern=r'async function showGallery\(\)\{[\s\S]*?\nlet pendingSheet=null;'
+          replacement=new_gallery+'\nlet pendingSheet=null;'
+          updated,n=re.subn(pattern,replacement,text,count=1)
+          if n!=1:
+              raise SystemExit('Bloco showGallery nao encontrado; nenhuma alteracao aplicada.')
+          path.write_text(updated,encoding='utf-8')
+          PY
+
+      - name: Validar HTML/JS
+        run: |
+          test -s admin-v4.html
+          grep -F "multiple" admin-v4.html >/dev/null
+          grep -F "crypto.randomUUID" admin-v4.html >/dev/null
+          grep -F "beon_gallery_state_v2" admin-v4.html >/dev/null
+
+      - name: Publicar e remover patch temporario
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add admin-v4.html
+          git rm .github/workflows/fix-gallery-admin-once.yml
+          git commit -m 'fix: melhorar upload e persistencia da galeria no admin'
+          git push
