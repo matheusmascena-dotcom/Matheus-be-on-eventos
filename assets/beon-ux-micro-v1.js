@@ -44,7 +44,6 @@
   function addSkeletonIfNeeded() {
     const grid = document.querySelector('#grid');
     if (!grid || grid.children.length) return;
-
     const wrapper = document.createElement('div');
     wrapper.className = 'beon-skeleton-grid';
     wrapper.dataset.beonSkeleton = '1';
@@ -60,13 +59,12 @@
     `).join('');
     grid.appendChild(wrapper);
 
-    const cleanup = () => {
+    const removeSkeleton = () => {
       const skeleton = grid.querySelector('[data-beon-skeleton]');
-      if (!skeleton) return;
-      const hasRealContent = [...grid.children].some(child => child !== skeleton);
-      if (hasRealContent) skeleton.remove();
+      if (skeleton && grid.children.length > 1) skeleton.remove();
+      else if (skeleton && !skeleton.parentNode) return;
     };
-    const observer = new MutationObserver(cleanup);
+    const observer = new MutationObserver(removeSkeleton);
     observer.observe(grid, { childList: true });
     window.setTimeout(() => {
       observer.disconnect();
