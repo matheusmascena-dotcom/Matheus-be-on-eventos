@@ -16,69 +16,30 @@
 
   const getCard = (el) => el?.closest?.('.card');
 
+  /*
+   * Visual-only preparation. The browser keeps control of the real navigation;
+   * this avoids the artificial 170 ms delay and prevents the transition layer
+   * from becoming part of the data-loading path.
+   */
   const prepare = (card) => {
-    if (!card) return null;
+    if (!card || reduced) return;
     const image = card.querySelector('.pic img');
     if (image) image.style.viewTransitionName = 'event-cover';
     card.classList.add('beon-page-target');
-    document.body.classList.add('beon-page-leaving');
-    try {
-      sessionStorage.setItem('beon-page-transition-v1', JSON.stringify({
-        slug: card.dataset.slug || '',
-        startedAt: Date.now()
-      }));
-    } catch {}
-    return image;
+    window.setTimeout(() => card.classList.remove('beon-page-target'), 260);
   };
 
-  const navigateLater = (url) => {
-    window.setTimeout(() => { location.href = url; }, reduced ? 0 : 170);
-  };
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-  if (!reduced) {
-    document.addEventListener('click', (event) => {
-      if (event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const card = getCard(event.target);
+    if (!card) return;
 
-      const card = getCard(event.target);
-      if (!card) return;
+    const link = event.target?.closest?.('a');
+    if (!isInternalEventUrl(link)) return;
 
-      const link = event.target?.closest?.('a');
-      const targetLink = isInternalEventUrl(link) ? link : card.querySelector('a.act.buy, a[href*="event.html"], a[href*="/eventos/"]');
-      if (!targetLink || !isInternalEventUrl(targetLink)) return;
-
-      /* Take control of the current navigation for a short, deliberate exit beat. */
-      const url = targetLink.href;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      prepare(card);
-      navigateLater(url);
-    }, { capture: true });
-  }
-
-  const applyEnterState = () => {
-    let hasPending = false;
-    try {
-      const raw = JSON.parse(sessionStorage.getItem('beon-page-transition-v1') || 'null');
-      hasPending = !!raw && (Date.now() - Number(raw.startedAt || 0) < 5000);
-    } catch {}
-    if (!hasPending) return;
-
-    const cover = document.querySelector('#cover, .poster img');
-    if (cover) cover.style.viewTransitionName = 'event-cover';
-
-    if (!reduced) {
-      document.documentElement.classList.add('beon-page-enter');
-      requestAnimationFrame(() => document.documentElement.classList.add('beon-page-enter-ready'));
-      window.setTimeout(() => {
-        document.documentElement.classList.remove('beon-page-enter', 'beon-page-enter-ready');
-      }, 520);
-    }
-    try { sessionStorage.removeItem('beon-page-transition-v1'); } catch {}
-  };
-
-  if (location.pathname.endsWith('/event.html') || /\/eventos\/[^/]+\.html$/i.test(location.pathname)) {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyEnterState, { once: true });
-    else applyEnterState();
-  }
+    prepare(card);
+    /* Do not preventDefault, do not stopPropagation and do not redirect manually. */
+  }, { capture: true, passive: true });
 })();
