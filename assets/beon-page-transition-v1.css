@@ -1,6 +1,9 @@
 /* Be-On page transition: additive only. No existing navigation logic is replaced. */
 @view-transition{navigation:auto}
 
+/* The event cover always has the shared name on the destination page. */
+.poster img,#cover{view-transition-name:event-cover}
+
 /* Shared-element transition used by the event cover when supported by the browser. */
 ::view-transition-old(event-cover),
 ::view-transition-new(event-cover){
@@ -11,17 +14,16 @@
 
 ::view-transition-old(root){animation:beonPageOld 260ms ease both}
 ::view-transition-new(root){animation:beonPageNew 420ms cubic-bezier(.22,.8,.2,1) both}
-@keyframes beonPageOld{to{opacity:.86}}
+@keyframes beonPageOld{to{opacity:.94}}
 @keyframes beonPageNew{from{opacity:.18;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* Fallback for browsers without cross-document View Transitions. */
 .beon-page-leaving{pointer-events:none!important}
 .beon-page-leaving .card{transition:transform 220ms cubic-bezier(.22,.8,.2,1),opacity 180ms ease!important}
-.beon-page-leaving .card.beon-page-target{transform:scale(.992);opacity:.2!important}
+.beon-page-leaving .card.beon-page-target{transform:scale(.992);opacity:.35!important}
 .beon-page-enter{opacity:0;transform:translateY(8px)}
 .beon-page-enter.beon-page-enter-ready{opacity:1;transform:none;transition:opacity 380ms cubic-bezier(.22,.8,.2,1),transform 420ms cubic-bezier(.22,.8,.2,1)}
 
-/* Keep the transition disabled for users who request reduced motion. */
 @media(prefers-reduced-motion:reduce){
   ::view-transition-old(root),::view-transition-new(root),
   ::view-transition-old(event-cover),::view-transition-new(event-cover){animation:none!important}
