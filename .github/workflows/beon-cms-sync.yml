@@ -8,6 +8,8 @@ on:
       - 'assets/beon-event-v4.js'
       - 'assets/beon-admin-v5.js'
       - 'assets/admin-v4-route.js'
+      - 'assets/beon-page-transition-v1.js'
+      - 'assets/beon-page-transition-v1.css'
   workflow_dispatch:
 permissions:
   contents: write
@@ -22,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: Injetar camadas CMS e rota Admin
+      - name: Injetar camadas CMS, rota Admin e transicao de pagina
         shell: python
         env:
           SHA: ${{ github.sha }}
@@ -31,13 +33,16 @@ jobs:
           import os, re
           sha=os.environ['SHA']
           for file, scripts in {
-              'index.html': ['assets/admin-v4-route.js','assets/beon-v4.js'],
-              'event.html': ['assets/beon-event-v4.js']
+              'index.html': ['assets/admin-v4-route.js','assets/beon-v4.js','assets/beon-page-transition-v1.js'],
+              'event.html': ['assets/beon-event-v4.js','assets/beon-page-transition-v1.js']
           }.items():
               p=Path(file)
               if not p.exists():
                   continue
               html=p.read_text(encoding='utf-8')
+              css='assets/beon-page-transition-v1.css'
+              html=re.sub(r'<link[^>]+href=["\']'+re.escape(css)+r'(?:\?[^"\']*)?["\'][^>]*>\s*','',html,flags=re.I)
+              html=html.replace('</head>', f'<link rel="stylesheet" href="{css}?v={sha}">\n</head>', 1)
               for src in scripts:
                   html=re.sub(r'<script[^>]+src=["\']'+re.escape(src)+r'(?:\?[^"\']*)?["\'][^>]*></script>\s*','',html,flags=re.I)
                   tag=f'<script src="{src}?v={sha}" defer></script>'
@@ -48,7 +53,11 @@ jobs:
         run: |
           grep -F 'assets/admin-v4-route.js' index.html
           grep -F 'assets/beon-v4.js' index.html
+          grep -F 'assets/beon-page-transition-v1.js' index.html
+          grep -F 'assets/beon-page-transition-v1.css' index.html
           grep -F 'assets/beon-event-v4.js' event.html
+          grep -F 'assets/beon-page-transition-v1.js' event.html
+          grep -F 'assets/beon-page-transition-v1.css' event.html
           if grep -Fq 'assets/beon-gallery-live-v1.js' event.html; then echo 'Galeria live legada ainda presente'; exit 1; fi
       - name: Publicar
         run: |
