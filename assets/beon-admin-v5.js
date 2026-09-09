@@ -71,7 +71,7 @@
   function attachDraftPersistence() {
     ['n','d','l','a','b','i','m','desc'].forEach(id => $(id)?.addEventListener('input', markDirty));
     $('p')?.addEventListener('change', markDirty);
-    clearTimeout(currentDraftTimer);
+    clearInterval(currentDraftTimer);
     currentDraftTimer = setInterval(() => { if (dirty) persistCurrentForm(); }, 1000);
   }
   function markDirty() {
@@ -192,7 +192,7 @@
       <div class="row" style="margin-top:10px"><button id="save" class="primary">Salvar</button><button id="cancel" type="button">Cancelar</button></div></div>`;
     $('i').value=v.image_url||'';
     $('cancel').onclick=()=>{if(formHasChanges()&&!confirm('Descartar o rascunho desta edição?'))return;clearDraft(editing);dirty=false;stopDraftTimer();saveUiState({eventEditor:{open:false}});showEvents();};
-    $('save').onclick=saveCurrentEvent; attachDraftPersistence(); attachCoverUpload(); saveUiState({eventEditor:{open:true,id:editing});
+    $('save').onclick=saveCurrentEvent; attachDraftPersistence(); attachCoverUpload(); saveUiState({eventEditor:{open:true,id:editing}});
     if(v.__draft)setMsg('Rascunho restaurado. Você pode continuar a edição.');
   }
 
