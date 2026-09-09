@@ -6,7 +6,7 @@ on:
       - '.github/workflows/beon-cms-sync.yml'
       - 'assets/beon-v4.js'
       - 'assets/beon-event-v4.js'
-      - 'assets/beon-gallery-live-v1.js'
+      - 'assets/beon-admin-v5.js'
       - 'assets/admin-v4-route.js'
   workflow_dispatch:
 permissions:
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - name: Injetar camadas CMS e rota Admin V4
+      - name: Injetar camadas CMS e rota Admin
         shell: python
         env:
           SHA: ${{ github.sha }}
@@ -32,7 +32,7 @@ jobs:
           sha=os.environ['SHA']
           for file, scripts in {
               'index.html': ['assets/admin-v4-route.js','assets/beon-v4.js'],
-              'event.html': ['assets/beon-event-v4.js','assets/beon-gallery-live-v1.js']
+              'event.html': ['assets/beon-event-v4.js']
           }.items():
               p=Path(file)
               if not p.exists():
@@ -49,11 +49,11 @@ jobs:
           grep -F 'assets/admin-v4-route.js' index.html
           grep -F 'assets/beon-v4.js' index.html
           grep -F 'assets/beon-event-v4.js' event.html
-          grep -F 'assets/beon-gallery-live-v1.js' event.html
+          if grep -Fq 'assets/beon-gallery-live-v1.js' event.html; then echo 'Galeria live legada ainda presente'; exit 1; fi
       - name: Publicar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html event.html
-          git diff --cached --quiet || git commit -m 'feat: ativar rota Admin V4 [beon-cms]'
+          git diff --cached --quiet || git commit -m 'feat: ativar camadas CMS [beon-cms]'
           git push
