@@ -119,4 +119,7 @@
     }catch{}
   }
   if(location.pathname.includes('Matheus-be-on-eventos')){setTimeout(organizeRealizedEvents,350);setTimeout(organizeRealizedEvents,1200);}
+
+  // Load the additive UX layer after the existing analytics bindings are in place.
+  try{if(!window.__beonUxMicroLoader){window.__beonUxMicroLoader=true;const s=document.createElement('script');s.src='assets/beon-ux-micro-v1.js?v=2da7573f';s.defer=true;document.head.appendChild(s);}}catch{}
 })();
