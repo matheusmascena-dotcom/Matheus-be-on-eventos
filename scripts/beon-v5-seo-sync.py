@@ -56,7 +56,7 @@ def lastmod_value(value):
 
 def fetch_events():
     query = urllib.parse.urlencode({
-        "select": "id,name,slug,event_date,location,artists,purchase_url,image_url,source_url,published,description,updated_at",
+        "select": "id,name,slug,event_date,location,artists,purchase_url,image_url,source_url,published,sold_out,description,updated_at",
         "order": "event_date.asc",
         "limit": "1000",
     })
@@ -76,6 +76,8 @@ def event_page(event):
         description = f"{name} na Be-On Eventos. Informações, ingressos e desconto MATHEUSMASCENA."
     else:
         description = f"{name} na Be-On Eventos. {description}"
+    if event.get("sold_out", False):
+        description = (description + " Ingressos esgotados.").strip()
     description = re.sub(r"\s+", " ", description).strip()[:300]
     location = event.get("location") or "São Paulo, SP"
     artists = event.get("artists") or ""
@@ -85,7 +87,8 @@ def event_page(event):
     canonical = f"{BASE_URL}/eventos/{slug}.html"
     dynamic = f"{BASE_URL}/event.html?event={slug}"
     realized = is_realized(event)
-    status = "Realizado" if realized else ("Publicado" if event.get("published", False) else "Oculto")
+    sold_out = bool(event.get("sold_out", False))
+    status = "Realizado" if realized else ("Sold Out" if sold_out else ("Publicado" if event.get("published", False) else "Oculto"))
     schema = {
         "@context": "https://schema.org",
         "@type": "Event",
@@ -112,7 +115,7 @@ def event_page(event):
         schema["performer"] = {"@type": "PerformingGroup", "name": artists}
     if image:
         schema["image"] = [image]
-    if purchase:
+    if purchase and not sold_out:
         schema["offers"] = {"@type": "Offer", "url": purchase, "availability": "https://schema.org/InStock", "priceCurrency": "BRL"}
 
     robots = "index,follow,max-image-preview:large" if event.get("published", False) else "noindex,nofollow"
@@ -122,8 +125,8 @@ def event_page(event):
     safe_artists = esc(artists)
     safe_status = esc(status)
     image_html = f'<meta property="og:image" content="{esc(image)}">' if image else ""
-    status_class = " status-realized" if realized else ""
-    status_badge = '<span class="event-status realized">REALIZADO</span>' if realized else ''
+    status_class = " status-realized" if realized else (" status-soldout" if sold_out else "")
+    status_badge = '<span class="event-status realized">REALIZADO</span>' if realized else ('<span class="event-status soldout">SOLD OUT</span>' if sold_out else '')
     return f'''<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -152,6 +155,8 @@ section{{position:relative;background:#120e1b;padding:25px;border-radius:18px}}
 section.status-realized{{overflow:hidden;opacity:.94}}
 .event-status{{display:inline-block;font-size:11px;letter-spacing:.12em;font-weight:700;padding:5px 8px;border-radius:999px;border:1px solid #ffffff22;margin-bottom:10px}}
 .event-status.realized{{background:#ffffff12;color:#c8bfd4}}
+.event-status.soldout{{background:#4a1031;color:#ff9ec5;border-color:#ff2f9255}}
+section.status-soldout{{overflow:hidden}}
 .meta{{color:#b8adca}}
 .cta{{display:inline-block;margin-top:12px;padding:12px 16px;border-radius:10px;background:#f5f0fa;color:#090711;text-decoration:none;font-weight:700}}
 </style>
