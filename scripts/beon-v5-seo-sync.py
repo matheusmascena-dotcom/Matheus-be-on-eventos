@@ -172,6 +172,7 @@ section.status-soldout{{overflow:hidden}}
 <a class="cta" href="{dynamic}">Ver página completa do evento</a>
 </section>
 </main>
+<script src="{BASE_URL}/assets/beon-analytics-v2.js?v=20260921-2" defer></script>
 </body>
 </html>
 {MARKER}

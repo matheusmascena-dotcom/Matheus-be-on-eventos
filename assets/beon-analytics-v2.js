@@ -4,8 +4,6 @@
 
   const SUPABASE_URL='https://bellpluuhrrluwsgouob.supabase.co';
   const SUPABASE_KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
-  const db=window.supabase?.createClient?.(SUPABASE_URL,SUPABASE_KEY);
-
   const qs=(s,r=document)=>r.querySelector(s);
   const safeGet=(storage,key,fallback=null)=>{try{const v=storage.getItem(key);return v==null?fallback:v}catch{return fallback}};
   const safeSet=(storage,key,value)=>{try{storage.setItem(key,value)}catch{}};
@@ -24,7 +22,6 @@
   if(!session.id||!session.lastActivity||now-Number(session.lastActivity)>SESSION_TIMEOUT) session={id:makeId(),lastActivity:now};
   else session.lastActivity=now;
   safeSet(localStorage,SESSION_KEY,JSON.stringify(session));
-  const sessionId=session.id;
 
   const params=new URLSearchParams(location.search);
   const sourceKey='beon_analytics_source_v2';
@@ -40,20 +37,24 @@
   if(params.get('utm_campaign'))safeSet(sessionStorage,'beon_analytics_campaign_v2',campaign);
   if(params.get('utm_content'))safeSet(sessionStorage,'beon_analytics_content_v2',content);
 
-  const path=location.pathname+location.search;
+  const path=rawSlug?location.pathname+'?event='+encodeURIComponent(rawSlug):location.pathname;
   const referrer=document.referrer||null;
   const rawSlug=params.get('event');
   const staticMatch=location.pathname.match(/\/eventos\/([^/]+)\.html$/i);
   const eventSlug=rawSlug||(staticMatch?decodeURIComponent(staticMatch[1]):null);
 
   let eventId=null;
+  let sessionId=session.id;
   let initialized=false;
 
   async function resolveEventId(){
-    if(!eventSlug||!db)return null;
+    if(!eventSlug)return null;
     try{
-      const {data}=await db.from('events').select('id').eq('slug',eventSlug).maybeSingle();
-      return data?.id||null;
+      const u=SUPABASE_URL+'/rest/v1/events?select=id&slug=eq.'+encodeURIComponent(eventSlug)+'&published=eq.true&limit=1';
+      const res=await fetch(u,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
+      if(!res.ok)return null;
+      const data=await res.json();
+      return data?.[0]?.id||null;
     }catch{return null;}
   }
 
@@ -72,7 +73,18 @@
     return 'other';
   }
 
+  function refreshSession(){
+    const t=Date.now();
+    let current={};
+    try{current=JSON.parse(safeGet(localStorage,SESSION_KEY,'{}')||'{}')}catch{current={};}
+    if(!current.id||!current.lastActivity||t-Number(current.lastActivity)>SESSION_TIMEOUT) current={id:makeId(),lastActivity:t};
+    else current.lastActivity=t;
+    safeSet(localStorage,SESSION_KEY,JSON.stringify(current));
+    sessionId=current.id;
+  }
+
   async function track(metricType,extra={}){
+    refreshSession();
     const payload={
       metric_type:metricType,
       event_id:extra.event_id||null,
