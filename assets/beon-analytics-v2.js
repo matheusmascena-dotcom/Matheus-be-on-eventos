@@ -40,13 +40,14 @@
   if(params.get('utm_campaign'))safeSet(sessionStorage,'beon_analytics_campaign_v2',campaign);
   if(params.get('utm_content'))safeSet(sessionStorage,'beon_analytics_content_v2',content);
 
-  const path=location.pathname+location.search;
+  const path=rawSlug?location.pathname+'?event='+encodeURIComponent(rawSlug):location.pathname;
   const referrer=document.referrer||null;
   const rawSlug=params.get('event');
   const staticMatch=location.pathname.match(/\/eventos\/([^/]+)\.html$/i);
   const eventSlug=rawSlug||(staticMatch?decodeURIComponent(staticMatch[1]):null);
 
   let eventId=null;
+  let sessionId=session.id;
   let initialized=false;
 
   async function resolveEventId(){
@@ -72,7 +73,18 @@
     return 'other';
   }
 
+  function refreshSession(){
+    const t=Date.now();
+    let current={};
+    try{current=JSON.parse(safeGet(localStorage,SESSION_KEY,'{}')||'{}')}catch{current={};}
+    if(!current.id||!current.lastActivity||t-Number(current.lastActivity)>SESSION_TIMEOUT) current={id:makeId(),lastActivity:t};
+    else current.lastActivity=t;
+    safeSet(localStorage,SESSION_KEY,JSON.stringify(current));
+    sessionId=current.id;
+  }
+
   async function track(metricType,extra={}){
+    refreshSession();
     const payload={
       metric_type:metricType,
       event_id:extra.event_id||null,
