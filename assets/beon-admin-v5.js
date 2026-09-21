@@ -53,24 +53,25 @@
       location: $('l')?.value.trim() || '', artists: $('a')?.value.trim() || '',
       purchase_url: $('b')?.value.trim() || '', image_url: $('i')?.value.trim() || '',
       source_url: $('m')?.value.trim() || '', published: $('p')?.value === 'true',
-      description: $('desc')?.value || ''
+      sold_out: $('soldOut')?.checked || false, description: $('desc')?.value || ''
     };
   }
   function formHasChanges() {
     const v = getEventFormPayload();
-    const meaningful = Object.entries(v).some(([k, value]) => k === 'published' ? false : value !== '');
+    const meaningful = Object.entries(v).some(([k, value]) => k === 'published' ? false : k === 'sold_out' ? value === true : value !== '');
     return meaningful || dirty || !!getDraft(editing);
   }
   function persistCurrentForm() {
     if (!$('form') || !$('n')) return;
     const payload = getEventFormPayload();
-    const meaningful = Object.entries(payload).some(([k, value]) => k === 'published' ? false : value !== '');
+    const meaningful = Object.entries(payload).some(([k, value]) => k === 'published' ? false : k === 'sold_out' ? value === true : value !== '');
     if (!meaningful) { clearDraft(editing); return; }
     saveDraft(editing, { id: editing, ...payload });
   }
   function attachDraftPersistence() {
     ['n','d','l','a','b','i','m','desc'].forEach(id => $(id)?.addEventListener('input', markDirty));
     $('p')?.addEventListener('change', markDirty);
+    $('soldOut')?.addEventListener('change', markDirty);
     clearInterval(currentDraftTimer);
     currentDraftTimer = setInterval(() => { if (dirty) persistCurrentForm(); }, 1000);
   }
@@ -160,7 +161,7 @@
   sb.auth.onAuthStateChange(async(_event,session)=>{if(session)await enterApp();});
 
   async function loadEvents(){const r=await sb.from('events').select('*').order('event_date');if(r.error){setMsg(r.error.message,true);return []}return r.data||[];}
-  function eventRow(e){return `<div class="item"><div><b>${esc(e.name)}</b><div class="muted">${esc(e.event_date||'')} · ${esc(e.location||'')} · ${e.published?'Publicado':'Oculto'}${getDraft(e.id)?' · <span style="color:#3fe0d0">rascunho</span>':''}</div></div><button data-edit="${esc(e.id)}">Editar</button><button data-pub="${esc(e.id)}">${e.published?'Ocultar':'Publicar'}</button><button data-del="${esc(e.id)}">Excluir</button></div>`;}
+  function eventRow(e){return `<div class="item"><div><b>${esc(e.name)}</b><div class="muted">${esc(e.event_date||'')} · ${esc(e.location||'')} · ${e.published?'Publicado':'Oculto'}${e.sold_out?' · <span style="color:#ff79ab">SOLD OUT</span>':''}${getDraft(e.id)?' · <span style="color:#3fe0d0">rascunho</span>':''}</div></div><button data-edit="${esc(e.id)}">Editar</button><button data-pub="${esc(e.id)}">${e.published?'Ocultar':'Publicar'}</button><button data-del="${esc(e.id)}">Excluir</button></div>`;}
 
   async function showEvents(){
     stopDraftTimer(); const data=await loadEvents();
@@ -177,7 +178,7 @@
   async function getExistingSlug(id){if(!id)return null;const r=await sb.from('events').select('slug').eq('id',id).maybeSingle();return r.data?.slug||null;}
 
   function openEventForm(e){
-    editing=e.id||null; dirty=!!getDraft(editing); const v=restoreDraft(e); const published=v.published!==false;
+    editing=e.id||null; dirty=!!getDraft(editing); const v=restoreDraft(e); const published=v.published!==false; const soldOut=v.sold_out===true;
     $('form').innerHTML=`<div class="box" id="eventEditorBox"><div class="grid">
       <label class="field"><span>Nome do evento</span><input id="n" placeholder="Nome" value="${esc(v.name)}"></label>
       <label class="field"><span>Data do evento</span><input id="d" type="date" value="${esc(v.event_date)}"></label>
@@ -187,6 +188,7 @@
       <div>${coverUploadBlock()}</div>
       <label class="field"><span>Link do Google Maps</span><input id="m" placeholder="https://www.google.com/maps/..." value="${esc(v.source_url)}"></label>
       <label class="field"><span>Status do evento</span><select id="p"><option value="true" ${published?'selected':''}>Publicado</option><option value="false" ${!published?'selected':''}>Oculto</option></select></label>
+      <label class="field"><span>Status de ingressos</span><label style="display:flex;align-items:center;gap:8px;padding:10px 0;color:#f3eef8"><input id="soldOut" type="checkbox" ${soldOut?'checked':''}> <span>Marcar como <b style="color:#ff79ab">SOLD OUT</b> e bloquear novas compras</span></label></label>
       </div><label class="field description"><span>Descrição do evento</span><textarea id="desc" placeholder="Descrição">${esc(v.description)}</textarea></label>
       <div id="formStatus" class="help">${v.__draft?'Rascunho restaurado automaticamente.':'As alterações são salvas como rascunho enquanto você edita.'}</div>
       <div class="row" style="margin-top:10px"><button id="save" class="primary">Salvar</button><button id="cancel" type="button">Cancelar</button></div></div>`;
@@ -200,7 +202,7 @@
     const name=$('n').value.trim(),date=$('d').value,purchaseUrl=$('b').value.trim();
     if(!name||!date||!purchaseUrl){setMsg('Preencha nome, data e link de compra antes de salvar.',true);return;}
     const slug=editing?(await getExistingSlug(editing))||slugify(name):slugify(name);
-    const row={name,event_date:date,location:$('l').value.trim(),artists:$('a').value.trim(),purchase_url:purchaseUrl,image_url:$('i').value.trim(),source_url:$('m').value.trim(),description:$('desc').value,published:$('p').value==='true',slug,updated_at:new Date().toISOString()};
+    const row={name,event_date:date,location:$('l').value.trim(),artists:$('a').value.trim(),purchase_url:purchaseUrl,image_url:$('i').value.trim(),source_url:$('m').value.trim(),description:$('desc').value,published:$('p').value==='true',sold_out:$('soldOut')?.checked===true,slug,updated_at:new Date().toISOString()};
     const button=$('save');button.disabled=true;button.textContent='Salvando…';
     try{
       const r=editing?await sb.from('events').update(row).eq('id',editing):await sb.from('events').insert(row).select('id').single();
