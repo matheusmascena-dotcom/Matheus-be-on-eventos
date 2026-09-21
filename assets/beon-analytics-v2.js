@@ -24,7 +24,6 @@
   if(!session.id||!session.lastActivity||now-Number(session.lastActivity)>SESSION_TIMEOUT) session={id:makeId(),lastActivity:now};
   else session.lastActivity=now;
   safeSet(localStorage,SESSION_KEY,JSON.stringify(session));
-  const sessionId=session.id;
 
   const params=new URLSearchParams(location.search);
   const sourceKey='beon_analytics_source_v2';
