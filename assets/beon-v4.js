@@ -39,6 +39,18 @@
     return (data || []).map(normalizeEvent);
   }
 
+  function ensureSoldOutStyles(){
+    if(qs('#beon-soldout-home-style')) return;
+    const s=document.createElement('style'); s.id='beon-soldout-home-style';
+    s.textContent=`
+      .soldout-ribbon{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-6deg);z-index:6;padding:9px 16px;border:1px solid rgba(255,121,171,.45);border-radius:10px;background:rgba(70,8,35,.94);color:#ffb1cf;font-size:12px;font-weight:900;letter-spacing:.16em;box-shadow:0 10px 30px rgba(0,0,0,.48),0 0 28px rgba(255,47,146,.16);text-transform:uppercase;pointer-events:none}
+      .soldout-action{background:#3a2633!important;color:#ffb1cf!important;border:1px solid rgba(255,121,171,.32)!important;cursor:not-allowed!important;pointer-events:none!important}
+      .featured-card .soldout-action{justify-content:center}
+      @media(max-width:700px){.soldout-ribbon{font-size:10px;padding:8px 13px}}
+    `;
+    document.head.appendChild(s);
+  }
+
   function renderCards(events, opts={}) {
     const grid = opts.grid || qs('#grid');
     if (!grid) return;
@@ -48,11 +60,14 @@
     grid.innerHTML = events.map((e,i) => {
       const dateLabel = new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR');
       const shortDate = new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).replace('.','');
-      const statusRibbon = realized ? '<span class="realized-ribbon">✓ REALIZADO</span>' : '';
-      const offer = realized ? '' : '<span class="off">5% OFF</span>';
+      const soldOut = !realized && e.sold_out === true;
+      const statusRibbon = realized ? '<span class="realized-ribbon">✓ REALIZADO</span>' : (soldOut ? '<span class="soldout-ribbon">SOLD OUT</span>' : '');
+      const offer = (realized || soldOut) ? '' : '<span class="off">5% OFF</span>';
       const action = realized
         ? `<a class="act buy" href="${cardUrl(e)}">Ver detalhes ↗</a>`
-        : `<a class="act buy" href="${cardUrl(e)}">Ver evento ↗</a>`;
+        : soldOut
+          ? '<span class="act buy soldout-action" aria-disabled="true">🚫 SOLD OUT</span>'
+          : `<a class="act buy" href="${cardUrl(e)}">Ver evento ↗</a>`;
       return `<article class="card ${realized?'card-realized':''}" data-slug="${esc(e.slug)}" data-event-id="${esc(e.id)}" data-search="${esc([e.name,e.location,e.artists,e.event_date].join(' '))}" style="animation:cardIn .55s ${i*.06}s both"><div class="pic"><img src="${esc(e.image)}" alt="${esc(e.name)}" ${i<3&&!realized?'fetchpriority="high"':'loading="lazy"'} decoding="async">${statusRibbon}<span class="tag">${shortDate}</span>${offer}<button class="fav ${favs.includes(e.slug)?'on':''}" aria-label="Favoritar">${favs.includes(e.slug)?'♥':'♡'}</button></div><div class="card-body"><h3 class="card-title">${esc(e.name)}</h3><div class="meta"><span>📅 ${dateLabel}</span><span>📍 ${esc(e.location)}</span><span>🎧 ${esc(e.artists)}</span>${realized?'<span class="realized-label">✓ Evento realizado</span>':''}</div><div class="actions"><a class="act maps" href="${esc(e.source_url || '#')}" target="_blank" rel="noopener">📍 Maps</a>${action}</div></div></article>`;
     }).join('');
 
@@ -92,7 +107,9 @@
     const upcoming = events.find(e => new Date(e.event_date+'T00:00:00-03:00').getTime() >= Date.now());
     if (!upcoming) { section.style.display='none'; return; }
     const ts = new Date(upcoming.event_date+'T00:00:00-03:00').getTime();
-    host.innerHTML = `<div class=\"featured-card\"><div class=\"featured-media\"><img src=\"${esc(upcoming.image)}\" alt=\"${esc(upcoming.name)}\" loading=\"eager\" fetchpriority=\"high\"></div><div class=\"featured-copy\"><span class=\"featured-badge\">✦ Próximo evento</span><h2>${esc(upcoming.name)}</h2><div class=\"featured-meta\"><span class=\"featured-chip\">📅 ${new Date(upcoming.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</span><span class=\"featured-chip\">📍 ${esc(upcoming.location)}</span><span class=\"featured-chip\">🎧 ${esc(upcoming.artists)}</span></div><div class=\"featured-countdown\" aria-live=\"polite\"><div class=\"featured-unit\"><strong id=\"fcDays\">--</strong><span>Dias</span></div><div class=\"featured-unit\"><strong id=\"fcHours\">--</strong><span>Horas</span></div><div class=\"featured-unit\"><strong id=\"fcMinutes\">--</strong><span>Min</span></div><div class=\"featured-unit\"><strong id=\"fcSeconds\">--</strong><span>Seg</span></div></div><div class=\"featured-actions\"><a class=\"featured-action featured-buy\" href=\"${esc(upcoming.buy || '#')}\" target=\"_blank\" rel=\"noopener\">Garantir meu ingresso</a><a class=\"featured-action featured-event\" href=\"event.html?event=${encodeURIComponent(upcoming.slug)}\">Ver evento ↗</a></div></div></div>`;
+    const soldOut = upcoming.sold_out === true;
+    ensureSoldOutStyles();
+    host.innerHTML = `<div class=\"featured-card\"><div class=\"featured-media\"><img src=\"${esc(upcoming.image)}\" alt=\"${esc(upcoming.name)}\" loading=\"eager\" fetchpriority=\"high\"></div><div class=\"featured-copy\"><span class=\"featured-badge\">✦ Próximo evento</span><h2>${esc(upcoming.name)}</h2><div class=\"featured-meta\"><span class=\"featured-chip\">📅 ${new Date(upcoming.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</span><span class=\"featured-chip\">📍 ${esc(upcoming.location)}</span><span class=\"featured-chip\">🎧 ${esc(upcoming.artists)}</span></div><div class=\"featured-countdown\" aria-live=\"polite\"><div class=\"featured-unit\"><strong id=\"fcDays\">--</strong><span>Dias</span></div><div class=\"featured-unit\"><strong id=\"fcHours\">--</strong><span>Horas</span></div><div class=\"featured-unit\"><strong id=\"fcMinutes\">--</strong><span>Min</span></div><div class=\"featured-unit\"><strong id=\"fcSeconds\">--</strong><span>Seg</span></div></div><div class=\"featured-actions\">${soldOut ? '<span class=\"featured-action featured-buy soldout-action\" aria-disabled=\"true\">🚫 SOLD OUT — ingressos esgotados</span>' : `<a class=\"featured-action featured-buy\" href=\"${esc(upcoming.buy || '#')}\" target=\"_blank\" rel=\"noopener\">Garantir meu ingresso</a>`}<a class=\"featured-action featured-event\" href=\"event.html?event=${encodeURIComponent(upcoming.slug)}\">Ver evento ↗</a></div></div></div>`;
     const tick=()=>{const left=Math.max(0,ts-Date.now()),t=Math.floor(left/1000); const vals=[Math.floor(t/86400),Math.floor(t%86400/3600),Math.floor(t%3600/60),t%60]; ['fcDays','fcHours','fcMinutes','fcSeconds'].forEach((id,i)=>{const el=qs('#'+id); if(el) el.textContent=String(vals[i]).padStart(2,'0');});}; tick(); clearInterval(window.__beonCountdown); window.__beonCountdown=setInterval(tick,1000);
   }
 
@@ -103,6 +120,7 @@
 
   async function publicHome() {
     if (!qs('#grid')) return;
+    ensureSoldOutStyles();
     setHomeMeta();
     try {
       const events=await loadEvents();

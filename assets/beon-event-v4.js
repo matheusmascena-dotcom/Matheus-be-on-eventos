@@ -22,6 +22,13 @@
   const setCanonical=href=>{let el=document.head.querySelector('link[rel="canonical"]');if(!el){el=document.createElement('link');el.rel='canonical';document.head.appendChild(el);}el.href=href;};
   const setJsonLd=obj=>{let el=document.head.querySelector('#beon-event-schema');if(!el){el=document.createElement('script');el.id='beon-event-schema';el.type='application/ld+json';document.head.appendChild(el);}el.textContent=JSON.stringify(obj);};
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function ensureSoldOutStyles(){
+    if(document.head.querySelector('#beon-soldout-event-style')) return;
+    const s=document.createElement('style'); s.id='beon-soldout-event-style';
+    s.textContent='.soldout-buy{display:flex;align-items:center;justify-content:center;min-height:44px;background:#3a2633!important;color:#ffb1cf!important;border:1px solid rgba(255,121,171,.32)!important;cursor:not-allowed!important;pointer-events:none!important;}';
+    document.head.appendChild(s);
+  }
+
   const favKey='beon-fav';
   const getFavs=()=>{try{return JSON.parse(localStorage.getItem(favKey)||'[]');}catch{return[];}};
   const saveFavs=v=>localStorage.setItem(favKey,JSON.stringify(v));
@@ -39,7 +46,8 @@
       const schema={'@context':'https://schema.org','@type':'Event',name:e.name,description,startDate:e.event_date?`${e.event_date}T00:00:00-03:00`:undefined,url:eventUrl,image:e.image_url?[e.image_url]:undefined,location:{'@type':'Place',name:e.location||'São Paulo, SP',address:{'@type':'PostalAddress',addressLocality:'São Paulo',addressRegion:'SP',addressCountry:'BR'}},organizer:{'@type':'Organization',name:'BeOn Eventos'},eventStatus:'https://schema.org/EventScheduled',eventAttendanceMode:'https://schema.org/OfflineEventAttendanceMode'};
       const purchaseUrl=PURCHASE_URLS[e.slug]||e.purchase_url;if(purchaseUrl)schema.offers={'@type':'Offer',url:purchaseUrl,availability:'https://schema.org/InStock'};Object.keys(schema).forEach(k=>schema[k]===undefined&&delete schema[k]);setJsonLd(schema);
       const cover=qs('#cover');if(cover){cover.removeAttribute('src');cover.src=e.image_url||'';cover.alt=e.name;}
-      if(qs('#name'))qs('#name').textContent=e.name;if(qs('#date'))qs('#date').textContent=new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});if(qs('#local'))qs('#local').textContent=e.location||'';if(qs('#artists'))qs('#artists').textContent=e.artists||'';if(qs('#buy'))qs('#buy').href=purchaseUrl||'#';
+      if(qs('#name'))qs('#name').textContent=e.name;if(qs('#date'))qs('#date').textContent=new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});if(qs('#local'))qs('#local').textContent=e.location||'';if(qs('#artists'))qs('#artists').textContent=e.artists||'';
+      const buy=qs('#buy'); if(buy){ ensureSoldOutStyles(); if(e.sold_out===true){ buy.removeAttribute('href'); buy.setAttribute('aria-disabled','true'); buy.className='buy soldout-buy'; buy.textContent='🚫 SOLD OUT — ingressos esgotados'; } else { buy.href=purchaseUrl||'#'; buy.className='buy'; buy.removeAttribute('aria-disabled'); buy.textContent='🎟️ Comprar ingresso'; } }
       const mapUrl=e.source_url||'#';if(qs('#maps'))qs('#maps').href=mapUrl;
       const fb=qs('#favorite');if(fb){const paint=()=>{fb.textContent=getFavs().includes(e.slug)?'♥ Favoritado':'♡ Favoritar';};paint();fb.onclick=()=>{let vals=getFavs();vals=vals.includes(e.slug)?vals.filter(v=>v!==e.slug):[...vals,e.slug];saveFavs(vals);paint();};}
       const share=qs('#share');if(share){share.onclick=async()=>{try{if(navigator.share)await navigator.share({title:e.name,url:eventUrl});else{await navigator.clipboard?.writeText(eventUrl);share.textContent='✓ Link copiado';setTimeout(()=>share.textContent='↗ Compartilhar',1600);}}catch{}};}
