@@ -165,7 +165,7 @@
 
   publicHome(); initAdmin(); wireTicketClicks();
 
-  try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=20260921-1';s.defer=true;document.head.appendChild(s);}}catch{}
+  try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=20260921-2';s.defer=true;document.head.appendChild(s);}}catch{}
 
   try {
     const style=document.createElement('style');
