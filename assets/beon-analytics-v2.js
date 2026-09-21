@@ -4,8 +4,6 @@
 
   const SUPABASE_URL='https://bellpluuhrrluwsgouob.supabase.co';
   const SUPABASE_KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
-  const db=window.supabase?.createClient?.(SUPABASE_URL,SUPABASE_KEY);
-
   const qs=(s,r=document)=>r.querySelector(s);
   const safeGet=(storage,key,fallback=null)=>{try{const v=storage.getItem(key);return v==null?fallback:v}catch{return fallback}};
   const safeSet=(storage,key,value)=>{try{storage.setItem(key,value)}catch{}};
@@ -50,10 +48,13 @@
   let initialized=false;
 
   async function resolveEventId(){
-    if(!eventSlug||!db)return null;
+    if(!eventSlug)return null;
     try{
-      const {data}=await db.from('events').select('id').eq('slug',eventSlug).maybeSingle();
-      return data?.id||null;
+      const u=SUPABASE_URL+'/rest/v1/events?select=id&slug=eq.'+encodeURIComponent(eventSlug)+'&published=eq.true&limit=1';
+      const res=await fetch(u,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
+      if(!res.ok)return null;
+      const data=await res.json();
+      return data?.[0]?.id||null;
     }catch{return null;}
   }
 
