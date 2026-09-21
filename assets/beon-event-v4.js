@@ -79,5 +79,5 @@
   function move(n){const photos=window.__beonPhotos||[];if(!photos.length)return;idx=(idx+n+photos.length)%photos.length;show();}
   qs('.close')?.addEventListener('click',()=>lb?.classList.remove('on'));qs('.prev')?.addEventListener('click',()=>move(-1));qs('.next')?.addEventListener('click',()=>move(1));document.addEventListener('keydown',ev=>{if(!lb?.classList.contains('on'))return;if(ev.key==='Escape')lb.classList.remove('on');if(ev.key==='ArrowLeft')move(-1);if(ev.key==='ArrowRight')move(1);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
-  try{if(!window.__beonAnalyticsLoader){window.__beonAnalyticsLoader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v1.js?v=14202d3e';s.defer=true;document.head.appendChild(s);}}catch{}
+  try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=20260921-1';s.defer=true;document.head.appendChild(s);}}catch{}
 })();
