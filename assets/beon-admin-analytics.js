@@ -23,32 +23,158 @@
   const eventName=id=>events.find(e=>e.id===id)?.name||'Evento';const count=(data,type)=>data.filter(x=>x.metric_type===type).length;
   const eventViews=data=>data.filter(x=>x.metric_type==='analytics_page_view'&&x.event_id);const ticketClicks=data=>data.filter(x=>x.metric_type==='analytics_ticket_click');
   async function loadEvents(){const r=await db.from('events').select('id,name,event_date,slug').order('event_date');if(!r.error)events=r.data||[]}
-  async function loadData(){const range=$('beonAnalyticsRange')?.value||'30',eventId=$('beonAnalyticsEvent')?.value||'all',since=range==='all'?null:daysAgo(Number(range));let q=db.from('site_metrics').select('metric_type,event_id,created_at,source,medium,campaign,content,placement,action,session_id,visitor_id,path,referrer').like('metric_type','analytics_%').not('visitor_id','is',null).order('created_at',{ascending:true}).limit(50000);if(since)q=q.gte('created_at',since.toISOString());if(eventId!=='all')q=q.eq('event_id',eventId);const r=await q;if(r.error)throw r.error;return r.data||[]}
-  async function loadLegacySummary(){const r=await db.from('site_metrics').select('metric_type').in('metric_type',['page_view','event_view','ticket_click']);const rows=r.data||[];return{page_view:count(rows,'page_view'),event_view:count(rows,'event_view'),ticket_click:count(rows,'ticket_click')}}
-  function render(data){
-    const views=eventViews(data),tickets=ticketClicks(data),visitors=new Set(data.map(x=>x.visitor_id).filter(Boolean)).size,sessions=new Set(data.map(x=>x.session_id).filter(Boolean)).size;
-    $('beonAnalyticsKpis').innerHTML=[['Visualizações',count(data,'analytics_page_view')],['Visitantes únicos',visitors],['Sessões',sessions],['Acessos a eventos',views.length],['Cliques em ingresso',tickets.length],['CTR de ingresso',pct(views.length?tickets.length/views.length*100:0)]].map(([l,v])=>`<div class="analytics-kpi"><b>${typeof v==='string'?v:fmt(v)}</b><span>${l}</span></div>`).join('');
-    const range=$('beonAnalyticsRange').value,totalDays=Math.min(14,range==='all'?14:Number(range)),map={};data.filter(x=>x.metric_type==='analytics_page_view').forEach(x=>{const k=localKey(new Date(x.created_at));map[k]=(map[k]||0)+1});
-    const keys=[];for(let i=totalDays-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);keys.push(localKey(d))}const max=Math.max(1,...keys.map(k=>map[k]||0));
-    $('beonAnalyticsTrend').innerHTML=keys.map(k=>`<div class="analytics-day" title="${k}: ${map[k]||0}"><i style="height:${Math.max(3,((map[k]||0)/max)*115)}px"></i><span>${k.slice(8)}</span></div>`).join('');
-    const eventBase=views.length||1;
-    $('beonAnalyticsFunnel').innerHTML=[['Visualizações de eventos',views.length,'100%'],['Cliques em ingresso',tickets.length,pct(tickets.length/eventBase*100)],['Favoritos',data.filter(x=>x.metric_type==='analytics_favorite_click'&&x.action==='add').length,pct(data.filter(x=>x.metric_type==='analytics_favorite_click'&&x.action==='add').length/eventBase*100)],['Compartilhamentos',count(data,'analytics_share_click'),pct(count(data,'analytics_share_click')/eventBase*100)]].map(([l,v,p])=>`<div><span>${l}</span><strong>${fmt(v)}</strong><span>${p}</span></div>`).join('');
-    const byEvent={};events.forEach(e=>byEvent[e.id]={name:e.name,views:0,tickets:0,favorites:0,shares:0,maps:0});
-    data.forEach(x=>{if(!x.event_id||!byEvent[x.event_id])return;if(x.metric_type==='analytics_page_view')byEvent[x.event_id].views++;if(x.metric_type==='analytics_ticket_click')byEvent[x.event_id].tickets++;if(x.metric_type==='analytics_favorite_click'&&x.action==='add')byEvent[x.event_id].favorites++;if(x.metric_type==='analytics_share_click')byEvent[x.event_id].shares++;if(x.metric_type==='analytics_map_click')byEvent[x.event_id].maps++});
-    const rows=Object.values(byEvent).filter(x=>x.views||x.tickets||x.favorites||x.shares||x.maps).sort((a,b)=>b.views-a.views),maxE=Math.max(1,...rows.map(x=>x.views));
-    $('beonAnalyticsEvents').innerHTML=rows.length?rows.slice(0,8).map(x=>`<div class="analytics-barrow"><span>${esc(x.name)}</span><div class="analytics-bar"><i style="width:${(x.views/maxE)*100}%"></i></div><strong>${fmt(x.views)} · ${pct(x.views?x.tickets/x.views*100:0)}</strong></div>`).join(''):'<div class="analytics-note">Sem dados da camada padronizada ainda.</div>';
-    const src={};data.filter(x=>x.metric_type==='analytics_page_view').forEach(x=>{const k=x.source||'Direto / orgânico';src[k]=(src[k]||0)+1});const sr=Object.entries(src).sort((a,b)=>b[1]-a[1]).slice(0,8),maxS=Math.max(1,...sr.map(x=>x[1]));
-    $('beonAnalyticsSources').innerHTML=sr.map(([k,v])=>`<div class="analytics-barrow"><span>${esc(k)}</span><div class="analytics-bar"><i style="width:${(v/maxS)*100}%"></i></div><strong>${fmt(v)}</strong></div>`).join('')||'<div class="analytics-note">Sem dados de origem ainda.</div>';
-    const interactions=[['Mapa','analytics_map_click'],['WhatsApp','analytics_whatsapp_click'],['Instagram','analytics_instagram_click'],['Compartilhar','analytics_share_click'],['Pesquisa','analytics_search']];
-    $('beonAnalyticsInteractions').innerHTML=interactions.map(([l,t])=>`<div><span>${l}</span><strong>${fmt(count(data,t))}</strong></div>`).join('');
-    const cut7=Date.now()-7*86400000,cut14=Date.now()-14*86400000,a={},b={};views.forEach(x=>{const t=new Date(x.created_at).getTime();if(t>=cut7)a[x.event_id]=(a[x.event_id]||0)+1;else if(t>=cut14)b[x.event_id]=(b[x.event_id]||0)+1});
-    const rising=Object.keys(a).map(id=>({id,g:(a[id]||0)-(b[id]||0),now:a[id]||0,prev:b[id]||0})).sort((x,y)=>y.g-x.g).slice(0,5);
-    $('beonAnalyticsRising').innerHTML=rising.map(x=>`<div><span>${esc(eventName(x.id))}</span><strong>${x.g>=0?'+':''}${fmt(x.g)} views</strong></div>`).join('')||'<div class="analytics-note">Sem dados suficientes.</div>';
-    $('beonAnalyticsEventTable').innerHTML=rows.length?`<table class="analytics-table"><thead><tr><th>Evento</th><th class="num">Visualizações</th><th class="num">Ingressos</th><th class="num">CTR</th><th class="num">Fav.</th><th class="num">Shares</th><th class="num">Maps</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${fmt(x.views)}</td><td class="num">${fmt(x.tickets)}</td><td class="num">${pct(x.views?x.tickets/x.views*100:0)}</td><td class="num">${fmt(x.favorites)}</td><td class="num">${fmt(x.shares)}</td><td class="num">${fmt(x.maps)}</td></tr>`).join('')}</tbody></table>`:'<div class="analytics-note">Nenhum evento com dados padronizados no período.</div>';
-    $('beonAnalyticsStatus').textContent=`Atualizado em ${new Date().toLocaleString('pt-BR')} · ${fmt(data.length)} registros analytics V2`;
-    window.__beonAnalyticsLast={data,events};
+  function extractEventSlug(row){
+    const text=`${row.path||''} ${row.referrer||''}`;
+    const m=text.match(/[?&]event=([^&#]+)/i)||text.match(/\/eventos\/([a-z0-9-]+)\.html/i);
+    return m?decodeURIComponent(m[1]):null;
   }
-  async function refresh(){try{render(await loadData())}catch(e){$('beonAnalyticsStatus').textContent='Erro ao carregar métricas: '+(e?.message||'erro')}}
+  function inferEventId(row){
+    if(row.event_id)return row.event_id;
+    const slug=extractEventSlug(row);
+    if(!slug)return null;
+    return events.find(e=>e.slug===slug)?.id||null;
+  }
+  function canonicalRow(row){
+    const eid= inferEventId(row);
+    if(eid)return 'event:'+eid;
+    try{
+      const u=new URL(row.path||'','https://beon.local');
+      return 'page:'+u.pathname;
+    }catch{return 'page:'+(row.path||'').split('?')[0];}
+  }
+  function isSameRecordedAction(a,b,maxSeconds=10){
+    if(!a||!b)return false;
+    if(canonicalRow(a)!==canonicalRow(b))return false;
+    return Math.abs(new Date(a.created_at).getTime()-new Date(b.created_at).getTime())<=maxSeconds*1000;
+  }
+  function mergeRows(legacyRows,v2Rows){
+    const merged=[...legacyRows];
+    v2Rows.forEach(row=>{
+      if(!merged.some(old=>isSameRecordedAction(old,row)))merged.push(row);
+    });
+    return merged;
+  }
+  function sourceFromRow(row){
+    if(row.source)return row.source;
+    try{
+      const u=new URL(row.path||'','https://beon.local');
+      return u.searchParams.get('utm_source')||'Direto / orgânico';
+    }catch{return 'Direto / orgânico';}
+  }
+  async function loadData(){
+    const range=$('beonAnalyticsRange')?.value||'all';
+    const since=range==='all'?null:daysAgo(Number(range));
+    let q=db.from('site_metrics').select('id,metric_type,event_id,created_at,source,medium,campaign,content,placement,action,session_id,visitor_id,path,referrer,user_agent').order('created_at',{ascending:true}).limit(50000);
+    if(since)q=q.gte('created_at',since.toISOString());
+    const r=await q;if(r.error)throw r.error;
+    return (r.data||[]).filter(x=>!(x.path||'').includes('admin=1'));
+  }
+  function buildModel(rows){
+    const legacyPage=rows.filter(x=>x.metric_type==='page_view');
+    const legacyEvent=rows.filter(x=>x.metric_type==='event_view');
+    const legacyTickets=rows.filter(x=>x.metric_type==='ticket_click');
+    const v2Page=rows.filter(x=>x.metric_type==='analytics_page_view');
+    const v2Tickets=rows.filter(x=>x.metric_type==='analytics_ticket_click');
+
+    const unifiedPage=mergeRows(legacyPage,v2Page.filter(x=>!x.event_id));
+    const unifiedEvent=mergeRows(legacyEvent,v2Page.filter(x=>inferEventId(x)));
+    const unifiedViews=[...unifiedPage,...unifiedEvent];
+
+    const unifiedTickets=mergeRows(legacyTickets,v2Tickets);
+    const identifiedRows=rows.filter(x=>x.visitor_id);
+    const visitors=new Set(identifiedRows.map(x=>x.visitor_id)).size;
+    const sessions=new Set(identifiedRows.map(x=>x.session_id).filter(Boolean)).size;
+    const favorites=rows.filter(x=>x.metric_type==='analytics_favorite_click'&&x.action==='add');
+    const shares=rows.filter(x=>x.metric_type==='analytics_share_click');
+    const maps=rows.filter(x=>x.metric_type==='analytics_map_click');
+    const whatsapp=rows.filter(x=>x.metric_type==='analytics_whatsapp_click');
+    const instagram=rows.filter(x=>x.metric_type==='analytics_instagram_click');
+    const searches=rows.filter(x=>x.metric_type==='analytics_search');
+
+    const byEvent={};
+    events.forEach(e=>byEvent[e.id]={name:e.name,views:0,tickets:0,favorites:0,shares:0,maps:0});
+    unifiedEvent.forEach(x=>{const id=inferEventId(x);if(id&&byEvent[id])byEvent[id].views++});
+    unifiedTickets.forEach(x=>{const id=inferEventId(x);if(id&&byEvent[id])byEvent[id].tickets++});
+    favorites.forEach(x=>{const id=inferEventId(x);if(id&&byEvent[id])byEvent[id].favorites++});
+    shares.forEach(x=>{const id=inferEventId(x);if(id&&byEvent[id])byEvent[id].shares++});
+    maps.forEach(x=>{const id=inferEventId(x);if(id&&byEvent[id])byEvent[id].maps++});
+    const eventRows=Object.entries(byEvent).map(([id,v])=>({id,...v})).filter(x=>x.views||x.tickets||x.favorites||x.shares||x.maps).sort((a,b)=>b.views-a.views);
+
+    const sources={};
+    unifiedViews.forEach(x=>{const k=sourceFromRow(x);sources[k]=(sources[k]||0)+1});
+
+    return {
+      rows,views:unifiedViews,pageViews:unifiedPage,eventViews:unifiedEvent,tickets:unifiedTickets,
+      visitors,sessions,favorites,shares,maps,whatsapp,instagram,searches,eventRows,sources,
+      legacy:{page:legacyPage.length,event:legacyEvent.length,tickets:legacyTickets.length},
+      v2:{page:v2Page.length,tickets:v2Tickets.length}
+    };
+  }
+  function applyEventFilter(model){
+    const eventId=$('beonAnalyticsEvent')?.value||'all';
+    if(eventId==='all')return model;
+    const keep=x=>inferEventId(x)===eventId;
+    return {
+      ...model,
+      views:model.views.filter(keep),
+      pageViews:model.pageViews.filter(keep),
+      eventViews:model.eventViews.filter(keep),
+      tickets:model.tickets.filter(keep),
+      favorites:model.favorites.filter(keep),
+      shares:model.shares.filter(keep),
+      maps:model.maps.filter(keep),
+      whatsapp:model.whatsapp.filter(keep),
+      instagram:model.instagram.filter(keep),
+      searches:model.searches.filter(keep),
+      eventRows:model.eventRows.filter(x=>x.id===eventId)
+    };
+  }
+  function render(rows){
+    const base=buildModel(rows),data=applyEventFilter(base);
+    const ticketCtr=data.eventViews.length?data.tickets.length/data.eventViews.length*100:0;
+    const visitorLabel=data.visitors?fmt(data.visitors):'—',sessionLabel=data.sessions?fmt(data.sessions):'—';
+    $('beonAnalyticsKpis').innerHTML=[
+      ['Visualizações',data.views.length],['Visitantes únicos',visitorLabel],['Sessões',sessionLabel],
+      ['Acessos a eventos',data.eventViews.length],['Cliques em ingresso',data.tickets.length],['CTR de ingresso',pct(ticketCtr)]
+    ].map(([l,v])=>`<div class="analytics-kpi"><b>${typeof v==='string'?v:fmt(v)}</b><span>${l}</span></div>`).join('');
+
+    const range=$('beonAnalyticsRange').value,totalDays=Math.min(14,range==='all'?14:Number(range)),map={};
+    data.views.forEach(x=>{const k=localKey(new Date(x.created_at));map[k]=(map[k]||0)+1});
+    const keys=[];for(let i=totalDays-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);keys.push(localKey(d))}
+    const max=Math.max(1,...keys.map(k=>map[k]||0));
+    $('beonAnalyticsTrend').innerHTML=keys.map(k=>`<div class="analytics-day" title="${k}: ${map[k]||0}"><i style="height:${Math.max(3,((map[k]||0)/max)*115)}px"></i><span>${k.slice(8)}</span></div>`).join('');
+
+    const favs=data.favorites.length,shares=data.shares.length;
+    const eventBase=data.eventViews.length||1;
+    $('beonAnalyticsFunnel').innerHTML=[
+      ['Visualizações de eventos',data.eventViews.length,'100%'],
+      ['Cliques em ingresso',data.tickets.length,pct(data.tickets.length/eventBase*100)],
+      ['Favoritos',favs,pct(favs/eventBase*100)],
+      ['Compartilhamentos',shares,pct(shares/eventBase*100)]
+    ].map(([l,v,p])=>`<div><span>${l}</span><strong>${fmt(v)}</strong><span>${p}</span></div>`).join('');
+
+    const rowsE=data.eventRows,maxE=Math.max(1,...rowsE.map(x=>x.views));
+    $('beonAnalyticsEvents').innerHTML=rowsE.length
+      ?rowsE.slice(0,8).map(x=>`<div class="analytics-barrow"><span>${esc(x.name)}</span><div class="analytics-bar"><i style="width:${(x.views/maxE)*100}%"></i></div><strong>${fmt(x.views)} · ${pct(x.views?x.tickets/x.views*100:0)}</strong></div>`).join('')
+      :'<div class="analytics-note">Sem acessos de eventos no período.</div>';
+
+    const sr=Object.entries(data.sources).sort((a,b)=>b[1]-a[1]).slice(0,8),maxS=Math.max(1,...sr.map(x=>x[1]));
+    $('beonAnalyticsSources').innerHTML=sr.length?sr.map(([k,v])=>`<div class="analytics-barrow"><span>${esc(k)}</span><div class="analytics-bar"><i style="width:${(v/maxS)*100}%"></i></div><strong>${fmt(v)}</strong></div>`).join(''):'<div class="analytics-note">Sem origem identificável.</div>';
+
+    const interactionRows=[['Mapa',data.maps.length],['WhatsApp',data.whatsapp.length],['Instagram',data.instagram.length],['Compartilhar',data.shares.length],['Pesquisa',data.searches.length]];
+    $('beonAnalyticsInteractions').innerHTML=interactionRows.map(([l,v])=>`<div><span>${l}</span><strong>${v?fmt(v):'—'}</strong></div>`).join('');
+
+    const cut7=Date.now()-7*86400000,cut14=Date.now()-14*86400000,a={},b={};
+    data.eventViews.forEach(x=>{const t=new Date(x.created_at).getTime(),id=inferEventId(x);if(!id)return;if(t>=cut7)a[id]=(a[id]||0)+1;else if(t>=cut14)b[id]=(b[id]||0)+1});
+    const rising=Object.keys(a).map(id=>({id,g:(a[id]||0)-(b[id]||0),now:a[id]||0,prev:b[id]||0})).sort((x,y)=>y.g-x.g).slice(0,5);
+    $('beonAnalyticsRising').innerHTML=rising.length?rising.map(x=>`<div><span>${esc(eventName(x.id))}</span><strong>${x.g>=0?'+':''}${fmt(x.g)} views</strong></div>`).join(''):'<div class="analytics-note">Sem dados suficientes.</div>';
+
+    $('beonAnalyticsEventTable').innerHTML=rowsE.length?`<table class="analytics-table"><thead><tr><th>Evento</th><th class="num">Visualizações</th><th class="num">Ingressos</th><th class="num">CTR</th><th class="num">Fav.</th><th class="num">Shares</th><th class="num">Maps</th></tr></thead><tbody>${rowsE.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${fmt(x.views)}</td><td class="num">${fmt(x.tickets)}</td><td class="num">${pct(x.views?x.tickets/x.views*100:0)}</td><td class="num">${fmt(x.favorites)}</td><td class="num">${fmt(x.shares)}</td><td class="num">${fmt(x.maps)}</td></tr>`).join('')}</tbody></table>`:'<div class="analytics-note">Nenhum evento com dados no período.</div>';
+
+    $('beonAnalyticsStatus').textContent=`Atualizado em ${new Date().toLocaleString('pt-BR')} · ${fmt(data.views.length)} visualizações unificadas · ${fmt(data.tickets.length)} cliques em ingresso`;
+    window.__beonAnalyticsLast={model:base,filtered:data,events};
+  }
+  async function refresh(){try{render(await loadData())}catch(e){$('beonAnalyticsStatus').textContent='Erro ao carregar métricas: '+(e?.message||'erro)'}}
   async function ensureXlsx(){if(window.XLSX)return;await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
   async function report(){
     const b=$('beonAnalyticsReport');b.disabled=true;b.textContent='Gerando…';
