@@ -179,18 +179,50 @@
   async function report(){
     const b=$('beonAnalyticsReport');b.disabled=true;b.textContent='Gerando…';
     try{
-      await ensureXlsx();const {data,events}=window.__beonAnalyticsLast||{data:[],events:[]};const views=eventViews(data),tickets=ticketClicks(data);
-      const resumo=[['Indicador','Valor'],['Visualizações',count(data,'analytics_page_view')],['Visitantes únicos',new Set(data.map(x=>x.visitor_id).filter(Boolean)).size],['Sessões',new Set(data.map(x=>x.session_id).filter(Boolean)).size],['Acessos a eventos',views.length],['Cliques em ingresso',tickets.length],['CTR de ingresso',views.length?((tickets.length/views.length)*100).toFixed(1)+'%':'0%'],['Favoritos (adicionar)',data.filter(x=>x.metric_type==='analytics_favorite_click'&&x.action==='add').length],['Compartilhamentos',count(data,'analytics_share_click')],['Mapas',count(data,'analytics_map_click')],['WhatsApp',count(data,'analytics_whatsapp_click')],['Instagram',count(data,'analytics_instagram_click')],['Buscas',count(data,'analytics_search')]];
-      const ev={};events.forEach(e=>ev[e.id]={Evento:e.name,Visualizacoes:0,Ingressos:0,CTR:'0%',Favoritos:0,Compartilhamentos:0,Maps:0});
-      data.forEach(x=>{if(!x.event_id||!ev[x.event_id])return;if(x.metric_type==='analytics_page_view')ev[x.event_id].Visualizacoes++;if(x.metric_type==='analytics_ticket_click')ev[x.event_id].Ingressos++;if(x.metric_type==='analytics_favorite_click'&&x.action==='add')ev[x.event_id].Favoritos++;if(x.metric_type==='analytics_share_click')ev[x.event_id].Compartilhamentos++;if(x.metric_type==='analytics_map_click')ev[x.event_id].Maps++});
+      await ensureXlsx();
+      const base=window.__beonAnalyticsLast?.model||buildModel(await loadData()),data=applyEventFilter(base),ev={};
+      events.forEach(e=>ev[e.id]={Evento:e.name,Visualizacoes:0,Ingressos:0,CTR:'0%',Favoritos:0,Compartilhamentos:0,Maps:0});
+      data.eventViews.forEach(x=>{const id=inferEventId(x);if(id&&ev[id])ev[id].Visualizacoes++});
+      data.tickets.forEach(x=>{const id=inferEventId(x);if(id&&ev[id])ev[id].Ingressos++});
+      data.favorites.forEach(x=>{const id=inferEventId(x);if(id&&ev[id])ev[id].Favoritos++});
+      data.shares.forEach(x=>{const id=inferEventId(x);if(id&&ev[id])ev[id].Compartilhamentos++});
+      data.maps.forEach(x=>{const id=inferEventId(x);if(id&&ev[id])ev[id].Maps++});
       Object.values(ev).forEach(x=>x.CTR=x.Visualizacoes?((x.Ingressos/x.Visualizacoes)*100).toFixed(1)+'%':'0%');
-      const diario={};data.filter(x=>x.metric_type==='analytics_page_view').forEach(x=>{const k=x.created_at.slice(0,10);diario[k]=(diario[k]||0)+1});
+
+      const resumo=[
+        ['Indicador','Valor'],
+        ['Visualizações unificadas',data.views.length],
+        ['Acessos a eventos',data.eventViews.length],
+        ['Cliques em ingresso',data.tickets.length],
+        ['CTR de ingresso',data.eventViews.length?((data.tickets.length/data.eventViews.length)*100).toFixed(1)+'%':'0%'],
+        ['Visitantes únicos identificados (V2)',data.visitors||'—'],
+        ['Sessões identificadas (V2)',data.sessions||'—'],
+        ['Favoritos (adicionar)',data.favorites.length],
+        ['Compartilhamentos',data.shares.length],
+        ['Mapas',data.maps.length],
+        ['WhatsApp',data.whatsapp.length],
+        ['Instagram',data.instagram.length],
+        ['Buscas',data.searches.length],
+        ['Legado: page_view',base.legacy.page],
+        ['Legado: event_view',base.legacy.event],
+        ['Legado: ticket_click',base.legacy.tickets],
+        ['V2: analytics_page_view',base.v2.page],
+        ['V2: analytics_ticket_click',base.v2.tickets]
+      ];
+      const diario={};
+      data.views.forEach(x=>{const k=localKey(new Date(x.created_at));diario[k]=(diario[k]||0)+1});
       const diarios=Object.entries(diario).sort().map(([Data,Visualizacoes])=>({Data,Visualizacoes}));
-      const src={};data.filter(x=>x.metric_type==='analytics_page_view').forEach(x=>{const k=x.source||'Direto / orgânico';src[k]=(src[k]||0)+1});
-      const origens=Object.entries(src).sort((a,b)=>b[1]-a[1]).map(([Origem,Visualizacoes])=>({Origem,Visualizacoes}));
-      const interacoes=[['Mapa','analytics_map_click'],['WhatsApp','analytics_whatsapp_click'],['Instagram','analytics_instagram_click'],['Compartilhar','analytics_share_click'],['Pesquisa','analytics_search']].map(([Interacao,Quantidade])=>({Interacao,Quantidade:count(data,Quantidade)}));
-      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.values(ev)),'Eventos');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(diarios),'Diario');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(origens),'Origens');XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(interacoes),'Interacoes');XLSX.writeFile(wb,`BeOn-Analytics-V2-${new Date().toISOString().slice(0,10)}.xlsx`);
-    }catch(e){alert('Não foi possível gerar o relatório: '+(e?.message||'erro'))}finally{b.disabled=false;b.textContent='📊 Gerar relatório Excel'}
+      const src=Object.entries(base.sources).sort((a,b)=>b[1]-a[1]).map(([Origem,Visualizacoes])=>({Origem,Visualizacoes}));
+      const interacoes=[['Mapa',data.maps.length],['WhatsApp',data.whatsapp.length],['Instagram',data.instagram.length],['Compartilhar',data.shares.length],['Pesquisa',data.searches.length]].map(([Interacao,Quantidade])=>({Interacao,Quantidade}));
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.values(ev)),'Eventos');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(diarios),'Diario');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(src),'Origens');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(interacoes),'Interacoes');
+      XLSX.writeFile(wb,`BeOn-Analytics-${new Date().toISOString().slice(0,10)}.xlsx`);
+    }catch(e){alert('Não foi possível gerar o relatório: '+(e?.message||'erro'))}
+    finally{b.disabled=false;b.textContent='📊 Gerar relatório Excel'}
   }
   async function showAnalytics(){
     $('panel').innerHTML=`<div class="analytics-wrap"><div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Analytics</h2><div id="beonAnalyticsStatus" class="muted">Carregando…</div></div><button id="beonAnalyticsReport" class="primary">📊 Gerar relatório Excel</button></div>
