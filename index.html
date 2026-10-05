@@ -101,7 +101,31 @@ const EVENTS=[
 ['music-on-sao-paulo','Music On - São Paulo','2026-11-07','Vale do Anhangabaú - São Paulo/SP','Marco Carola e etc.','assets/covers/music-on-sao-paulo.webp','https://embedstore.ingresse.com/tickets/www.ingresse.com/event/102379?passkey=MATHEUSMASCENA','https://www.google.com/maps/search/?api=1&query=Vale%20do%20Anhangabaú%20São%20Paulo'],
 ['unreal-the-grid','UNREAL x The Grid','2026-11-21','Komplexo Tempo - São Paulo/SP','Kuko, Cloudy, Serafina, Davyboi, etc.','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG-KJTFGlUei_pam-GZK5zQY6b3nESvqBc0yO_RWEGQ7fZ_T5ciWCouW6B&s=10','https://embedstore.ingresse.com/tickets/www.ingresse.com/event/103569?passkey=MATHEUSMASCENA','https://www.google.com/maps/search/?api=1&query=Komplexo%20Tempo%20São%20Paulo'],
 ['one-life-sao-paulo','One Life São Paulo - Michael Bibi','2026-11-28','Arena Pinheiros - São Paulo/SP','Michael Bibi e etc.','assets/covers/one-life-sao-paulo.jpg','https://embedstore.ingresse.com/tickets/www.ingresse.com/event/95761?passkey=MATHEUSMASCENA','https://www.google.com/maps/search/?api=1&query=Arena%20Pinheiros%20São%20Paulo']
-];
+];;
+const SUPABASE_PUBLIC_URL='https://bellpluuhrrluwsgouob.supabase.co';
+const SUPABASE_PUBLIC_KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
+const FALLBACK_EVENTS=EVENTS.map(e=>[...e]);
+async function syncPublicEvents(){
+  try{
+    const sb=window.supabase.createClient(SUPABASE_PUBLIC_URL,SUPABASE_PUBLIC_KEY);
+    const {data,error}=await sb.from('events').select('id,name,slug,event_date,location,artists,purchase_url,image_url,published').eq('published',true).order('event_date',{ascending:true});
+    if(error||!Array.isArray(data)) throw error||new Error('Resposta inválida');
+    const remote=data.filter(e=>e.slug&&e.name&&e.event_date).map(e=>[
+      e.slug,e.name,e.event_date,e.location||'São Paulo/SP',e.artists||'Line-up a confirmar',
+      e.image_url||'',e.purchase_url||'',
+      e.location ? 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.location) : ''
+    ]);
+    if(remote.length){
+      EVENTS.splice(0,EVENTS.length,...remote);
+      render();
+      window.dispatchEvent(new Event('beon-events-synced'));
+    }
+  }catch(err){
+    console.warn('BeOn: sincronização pública indisponível; usando dados de fallback.',err);
+  }
+}
+setTimeout(syncPublicEvents,0);
+setInterval(syncPublicEvents,300000);
 const favKey='beon-fav';const getFav=()=>JSON.parse(localStorage.getItem(favKey)||'[]');const setFav=x=>localStorage.setItem(favKey,JSON.stringify(x));const grid=document.getElementById('grid');
 function render(){const favs=getFav();grid.innerHTML=EVENTS.map((e,i)=>`<article class="card" data-slug="${e[0]}" data-search="${e[1]} ${e[3]} ${e[4]} ${e[2]}" style="animation:cardIn .55s ${i*.06}s both"><div class="pic"><img src="${e[5]}" alt="${e[1]}" ${i<3?'fetchpriority="high"':'loading="lazy"'}><span class="tag">${new Date(e[2]+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).replace('.','')}</span><span class="off">5% OFF</span><button class="fav ${favs.includes(e[0])?'on':''}" aria-label="Favoritar">${favs.includes(e[0])?'♥':'♡'}</button></div><div class="card-body"><h3 class="card-title">${e[1]}</h3><div class="meta"><span>📅 ${new Date(e[2]+'T12:00:00').toLocaleDateString('pt-BR')}</span><span>📍 ${e[3]}</span><span>🎧 ${e[4]}</span></div><div class="actions"><a class="act maps" href="${e[7]}" target="_blank" rel="noopener">📍 Maps</a><a class="act buy" href="event.html?event=${e[0]}">Ver evento ↗</a></div></div></article>`).join('');document.querySelectorAll('.card').forEach(card=>{const slug=card.dataset.slug;const fav=card.querySelector('.fav');fav.onclick=(ev)=>{ev.stopPropagation();let a=getFav();a=a.includes(slug)?a.filter(x=>x!==slug):[...a,slug];setFav(a);fav.classList.toggle('on');fav.textContent=a.includes(slug)?'♥':'♡'};card.onclick=(ev)=>{if(ev.target.closest('a,button'))return;location.href='event.html?event='+slug};card.addEventListener('mousemove',e=>{if(innerWidth<900)return;const r=card.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(950px) rotateX(${-y*5}deg) rotateY(${x*6}deg) translateY(-4px)`});card.addEventListener('mouseleave',()=>card.style.transform='')})}
 const style=document.createElement('style');style.textContent='@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}';document.head.appendChild(style);render();
@@ -127,7 +151,7 @@ async function openAdmin(){if(new URLSearchParams(location.search).get('admin')!
     function tick(){const left=Math.max(0,eventTs-Date.now());const total=Math.floor(left/1000);document.getElementById('fcDays').textContent=String(Math.floor(total/86400)).padStart(2,'0');document.getElementById('fcHours').textContent=String(Math.floor(total%86400/3600)).padStart(2,'0');document.getElementById('fcMinutes').textContent=String(Math.floor(total%3600/60)).padStart(2,'0');document.getElementById('fcSeconds').textContent=String(total%60).padStart(2,'0');}
     tick();setInterval(tick,1000);
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mount); else mount();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',mount); else mount(); window.addEventListener('beon-events-synced',mount);
 })();
 </script>
 <script src="assets/admin-v4-route.js?v=4a69dfd3dc5625162c5db4100bfed3028c00d871" defer></script>
