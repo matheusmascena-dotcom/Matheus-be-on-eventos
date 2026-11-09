@@ -29,6 +29,18 @@
     document.head.appendChild(s);
   }
 
+  function saoPauloDateKey(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now);
+    const part = type => parts.find(item => item.type === type)?.value || '';
+    return part('year') + '-' + part('month') + '-' + part('day');
+  }
+  function eventDayHasEnded(eventDate, now = new Date()) {
+    const eventDay = String(eventDate || '').slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(eventDay) && eventDay < saoPauloDateKey(now);
+  }
+
   const favKey='beon-fav';
   const getFavs=()=>{try{return JSON.parse(localStorage.getItem(favKey)||'[]');}catch{return[];}};
   const saveFavs=v=>localStorage.setItem(favKey,JSON.stringify(v));
@@ -40,7 +52,7 @@
       const {data:e,error}=await sb.from('events').select('*').eq('slug',slug).eq('published',true).maybeSingle();
       if(error||!e){reveal();return;}
       const publicUrl=new URL(location.href);publicUrl.searchParams.set('event',e.slug);publicUrl.hash='';const eventUrl=publicUrl.toString();
-      const eventPast=!!e.event_date&&new Date(e.event_date+'T00:00:00-03:00').getTime()<Date.now();
+      const eventPast=!!e.event_date&&eventDayHasEnded(e.event_date);
       const description=`${e.name} — ${e.event_date?new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):''}. ${e.location||''}. ${eventPast?'Evento realizado. Veja as informações e fotos oficiais.':'Veja informações, fotos oficiais e compre seu ingresso com 5% de desconto usando o cupom MATHEUSMASCENA.'}`.replace(/\s+/g,' ').trim();
       document.title=`${e.name} | BeOn Eventos - Embaixador Matheus Mascena`;
       setMeta('description',description);setMeta('robots','index,follow,max-image-preview:large');setCanonical(eventUrl);setMeta('og:type','event',true);setMeta('og:title',document.title,true);setMeta('og:description',description,true);setMeta('og:url',eventUrl,true);if(e.image_url)setMeta('og:image',e.image_url,true);setMeta('og:site_name','BeOn Eventos',true);setMeta('twitter:card','summary_large_image');setMeta('twitter:title',document.title);setMeta('twitter:description',description);if(e.image_url)setMeta('twitter:image',e.image_url);
@@ -67,7 +79,7 @@
         }
       }
 
-      const target=new Date(e.event_date+'T00:00:00-03:00').getTime();const tick=()=>{let x=Math.max(0,target-Date.now());const d=Math.floor(x/86400000);x%=86400000;const h=Math.floor(x/3600000);x%=3600000;const m=Math.floor(x/60000);const s=Math.floor(x/1000)%60;[['d',d],['h',h],['m',m],['s',s]].forEach(([id,value])=>{const el=qs('#'+id);if(el)el.textContent=String(value).padStart(2,'0');});};tick();clearInterval(window.__beonEventCountdown);window.__beonEventCountdown=setInterval(tick,1000);
+      const target=new Date(e.event_date+'T00:00:00-03:00').getTime();const tick=()=>{let x=Math.max(0,target-Date.now());const d=Math.floor(x/86400000);x%=86400000;const h=Math.floor(x/3600000);x%=3600000;const m=Math.floor(x/60000);const s=Math.floor(x/1000)%60;[['d',d],['h',h],['m',m],['s',s]].forEach(([id,value])=>{const el=qs('#'+id);if(el)el.textContent=String(value).padStart(2,'0');});if(eventDayHasEnded(e.event_date)&&buy?.isConnected)buy.remove();};tick();clearInterval(window.__beonEventCountdown);window.__beonEventCountdown=setInterval(tick,1000);
       qs('#bsearch')?.addEventListener('click',()=>{location.href='index.html?focus=search#eventos';});
       try{await sb.from('site_metrics').insert({metric_type:'event_view',event_id:e.id,path:location.pathname+location.search,referrer:document.referrer||null,user_agent:navigator.userAgent});}catch{}
     }catch(err){console.warn('BeOn event:',err);}finally{reveal();}

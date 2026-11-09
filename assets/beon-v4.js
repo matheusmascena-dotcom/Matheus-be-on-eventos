@@ -6,6 +6,18 @@
 
   const qs = (s, r=document) => r.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>\"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
+  function saoPauloDateKey(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now);
+    const part = type => parts.find(item => item.type === type)?.value || '';
+    return part('year') + '-' + part('month') + '-' + part('day');
+  }
+  function eventDayHasEnded(eventDate, now = new Date()) {
+    const eventDay = String(eventDate || '').slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(eventDay) && eventDay < saoPauloDateKey(now);
+  }
+
   const favKey = 'beon-fav';
   const getFavs = () => JSON.parse(localStorage.getItem(favKey) || '[]');
   const saveFavs = x => localStorage.setItem(favKey, JSON.stringify(x));
@@ -104,7 +116,7 @@
   function renderFeatured(events) {
     const host = qs('#featuredUpcoming'); const section=qs('#featured-upcoming');
     if (!host || !section) return;
-    const upcoming = events.find(e => new Date(e.event_date+'T00:00:00-03:00').getTime() >= Date.now());
+    const upcoming = events.find(e => !eventDayHasEnded(e.event_date));
     if (!upcoming) { section.style.display='none'; return; }
     const ts = new Date(upcoming.event_date+'T00:00:00-03:00').getTime();
     const soldOut = upcoming.sold_out === true;
@@ -118,20 +130,19 @@
     input.oninput=()=>{const q=input.value.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');let n=0; document.querySelectorAll('.card').forEach(c=>{const text=(c.dataset.search+' '+c.innerText).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const ok=!q||text.includes(q);c.style.display=ok?'':'none';if(ok)n++;}); const no=qs('#noResults'); if(no) no.style.display=n?'none':'block';};
   }
 
-  async function publicHome() {
+  async function publicHome(trackPageView = true) {
     if (!qs('#grid')) return;
     ensureSoldOutStyles();
     setHomeMeta();
     try {
       const events=await loadEvents();
-      const now=Date.now();
-      const upcoming=events.filter(e=>new Date(e.event_date+'T00:00:00-03:00').getTime()>=now);
-      const realized=events.filter(e=>new Date(e.event_date+'T00:00:00-03:00').getTime()<now).sort((a,b)=>new Date(b.event_date)-new Date(a.event_date));
+      const upcoming=events.filter(e=>!eventDayHasEnded(e.event_date));
+      const realized=events.filter(e=>eventDayHasEnded(e.event_date)).sort((a,b)=>new Date(b.event_date)-new Date(a.event_date));
       renderCards(upcoming);
       renderFeatured(upcoming);
       renderRealizedSection(realized);
       enhanceSearch([...upcoming,...realized]);
-      metric('page_view');
+      if(trackPageView) metric('page_view');
     } catch (e) { console.warn('BeOn CMS fallback:', e); }
   }
 
@@ -163,6 +174,17 @@
 
   function wireTicketClicks(){document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const href=a.getAttribute('href')||'';if(href.includes('ingresse.com')||href.includes('cart.ingresse.com')) metric('ticket_click');});}
 
+  window.addEventListener('beon-events-synced',()=>publicHome(false));
+  function scheduleSaoPauloDayChangeRefresh(){
+    const now=new Date();
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(now);
+    const part=type=>Number(parts.find(item=>item.type===type)?.value||0);
+    const seconds=(part('hour')*3600)+(part('minute')*60)+part('second');
+    const delay=Math.max(1000,(86400-seconds)*1000-now.getMilliseconds()+150);
+    setTimeout(()=>{publicHome(false);scheduleSaoPauloDayChangeRefresh();},delay);
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)publicHome(false);});
+  scheduleSaoPauloDayChangeRefresh();
   publicHome(); initAdmin(); wireTicketClicks();
 
   try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=20260928-1';s.defer=true;document.head.appendChild(s);}}catch{}
