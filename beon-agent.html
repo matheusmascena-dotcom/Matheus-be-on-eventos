@@ -37,23 +37,27 @@
   <div class="row" style="margin-top:9px"><button id="scan" class="primary">Verificar agora</button><span id="scanStatus" class="muted"></span></div>
  </div>
  <div class="box">
-  <h2 style="margin:0 0 8px">Etapa 1 — Preparar sua Página do Facebook</h2>
-  <p class="muted">Como você ainda não tem uma Página, crie uma Página própria usando seu perfil pessoal do Facebook. Você será o administrador dela. Não precisa ter acesso à Página da Be-On nem criar uma Página em nome da produtora.</p>
-  <div class="row"><a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener noreferrer">Criar minha Página no Facebook ↗</a></div>
-  <ol class="muted" style="padding-left:20px">
-   <li>Use um nome que represente você, por exemplo <b>Matheus Mascena</b> ou <b>Matheus Mascena — Música e Eventos</b>.</li>
-   <li>Depois de criar, confirme em Configurações da Página → Acesso à Página que seu perfil pessoal aparece com controle total.</li>
-   <li>No Instagram: Perfil → Editar perfil → Página → Conectar ou criar. Selecione a Página que acabou de criar.</li>
-   <li>Volte aqui e só prossiga quando a Página aparecer vinculada ao Instagram profissional.</li>
-  </ol>
-  <p class="foot">Não habilite permissões de mensagens por necessidade do agente: ele só precisa ler publicações públicas. A conexão não exige acesso administrativo à Página da Be-On.</p>
+  <h2 style="margin:0 0 8px">Etapa 1 — Conferir sua conta profissional</h2>
+  <p class="muted">O Unified Login usa uma conta Instagram profissional (Business ou Creator) compartilhada com o aplicativo no portfólio empresarial selecionado. A Página do Facebook que você criou pode continuar vinculada, mas este fluxo novo seleciona o ativo Instagram diretamente. Não é necessário acesso à Página da Be-On.</p>
+  <p class="foot">O agente usará somente leitura e triagem. Ele não publica, envia mensagens nem modera comentários.</p>
  </div>
  <div class="box">
-  <h2 style="margin:0 0 8px">Etapa 2 — Conectar Instagram via Meta</h2>
-  <p class="muted">A conexão usa a API oficial da Meta. O token é enviado diretamente ao Supabase por HTTPS e guardado apenas em armazenamento restrito do servidor; ele não é salvo no navegador, no GitHub ou exibido novamente.</p>
-  <label class="field"><span>Token de acesso Meta (não compartilhe no chat)</span><input id="metaToken" type="password" autocomplete="off" placeholder="Cole o token de acesso da Meta"></label>
-  <div class="row" style="margin-top:9px"><button id="connectMeta" class="primary">Validar e conectar</button><span id="metaStatus" class="muted"></span></div>
-  <p class="foot">Você não precisa entrar na conta @beonentertainment. Use um token de usuário Meta de uma conta profissional que você administra e que esteja vinculada a uma Página do Facebook. Permissões usuais: pages_show_list, instagram_basic e pages_read_engagement. A Meta precisa permitir Business Discovery para o perfil de destino. <a href="https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api" target="_blank" rel="noopener noreferrer">Documentação oficial da API Instagram da Meta ↗</a></p>
+  <h2 style="margin:0 0 8px">Etapa 2 — Configurar o aplicativo Meta</h2>
+  <p class="muted">Informe as credenciais do aplicativo criado na Meta. O App Secret será enviado por HTTPS e armazenado apenas no banco privado do Supabase, acessível ao servidor; não será salvo no navegador nem no GitHub. Nunca cole o App Secret no chat.</p>
+  <div class="grid">
+   <label class="field"><span>Meta App ID</span><input id="metaAppId" inputmode="numeric" autocomplete="off" placeholder="ID numérico do aplicativo"></label>
+   <label class="field"><span>Configuration ID (Unified Login)</span><input id="metaConfigId" inputmode="numeric" autocomplete="off" value="1801918724410595"></label>
+   <label class="field full"><span>Meta App Secret (não compartilhe no chat)</span><input id="metaAppSecret" type="password" autocomplete="new-password" placeholder="Cole diretamente aqui, no painel administrativo"></label>
+  </div>
+  <div class="row" style="margin-top:9px"><button id="saveMetaApp" class="primary">Salvar credenciais no servidor</button><span id="metaSaveStatus" class="muted"></span></div>
+  <div class="field full" style="margin-top:12px"><span>URL de redirecionamento para cadastrar no painel da Meta</span><input id="metaRedirectUri" readonly value="https://matheusmascena-dotcom.github.io/Matheus-be-on-eventos/beon-agent.html"></div>
+  <p class="foot">Na Meta, cadastre exatamente essa URL no campo “URL de redirecionamento” da configuração Unified Login e clique em Salvar. Depois volte aqui e clique em “Conectar conta via Meta”.</p>
+ </div>
+ <div class="box">
+  <h2 style="margin:0 0 8px">Etapa 3 — Autorizar a conta Instagram</h2>
+  <p class="muted">O botão abre a tela oficial da Meta. Entre com sua conta que administra o portfólio e selecione/compartilhe a conta profissional que o agente usará. O código de autorização retornará a este painel e será trocado por um token no servidor. O token nunca aparece no navegador.</p>
+  <div class="row" style="margin-top:9px"><button id="connectMeta" class="primary">Conectar conta via Meta</button><span id="metaStatus" class="muted"></span></div>
+  <p class="foot">A configuração usa System User Access Token (SUAT). A autorização pode ser revogada ou deixar de funcionar caso o ativo seja removido do portfólio. Não compartilhe tokens ou App Secret por mensagem.</p>
  </div>
  <div class="box">
   <div class="tabs"><button data-tab="pending" class="active">Candidatos para aprovação</button><button data-tab="uncertain">Publicações para triagem</button><button data-tab="history">Histórico de execuções</button></div>
@@ -165,10 +169,13 @@
  $('logout').onclick=async()=>{await sb.auth.signOut();location.reload();};
  $('refresh').onclick=refreshAll;
  $('scan').onclick=async()=>{ $('scan').disabled=true;note('scanStatus','Consultando Instagram…');try{const r=await call('scan');note('scanStatus',r.ok?'Finalizado: '+r.fetched+' publicações lidas, '+r.candidatesCreated+' candidatos e '+r.duplicatesFound+' duplicidades.':r.reason,true);await refreshAll();}catch(e){note('scanStatus',e.message,true);}finally{$('scan').disabled=false;}};
- $('connectMeta').onclick=async()=>{const token=$('metaToken').value.trim();if(!token){note('metaStatus','Informe o token Meta.',true);return;}$('connectMeta').disabled=true;note('metaStatus','Validando permissões e Business Discovery…');try{const result=await call('save_meta_token',{accessToken:token});$('metaToken').value='';note('metaStatus','Conectado: @'+result.target+(result.page?' · Página '+result.page:'')+'. Token armazenado com segurança.');await refreshAll();}catch(e){note('metaStatus',e.message,true);}finally{$('connectMeta').disabled=false;}};
+ $('saveMetaApp').onclick=async()=>{const appId=$('metaAppId').value.trim(),appSecret=$('metaAppSecret').value.trim(),configId=$('metaConfigId').value.trim();if(!appId||!appSecret||!configId){note('metaSaveStatus','Preencha App ID, App Secret e Configuration ID.',true);return;}$('saveMetaApp').disabled=true;note('metaSaveStatus','Salvando credenciais no servidor…');try{const r=await call('save_meta_app_credentials',{appId,appSecret,configId});$('metaAppSecret').value='';$('metaRedirectUri').value=r.redirectUri;note('metaSaveStatus','Credenciais salvas com segurança no Supabase. O App Secret foi removido do campo.');}catch(e){note('metaSaveStatus',e.message,true);}finally{$('saveMetaApp').disabled=false;}};
+ $('connectMeta').onclick=async()=>{$('connectMeta').disabled=true;note('metaStatus','Preparando autorização segura na Meta…');try{const r=await call('start_unified_login');location.assign(r.authUrl);}catch(e){note('metaStatus',e.message,true);$('connectMeta').disabled=false;}};
+ async function handleMetaCallback(){const params=new URLSearchParams(location.search);const code=params.get('code'),state=params.get('state'),metaError=params.get('error_description')||params.get('error');if(!code&&!metaError)return;history.replaceState({},document.title,location.pathname);if(metaError){note('metaStatus','A autorização Meta foi cancelada ou recusada: '+metaError,true);return;}try{note('metaStatus','Finalizando autorização e verificando a conta compartilhada…');const r=await call('complete_unified_login',{code,state});note('metaStatus','Conectado à conta '+(r.account?'@'+r.account:'Instagram')+'; Business Discovery de @'+r.target+' validado. Token armazenado no servidor.');await refreshAll();}catch(e){note('metaStatus',e.message,true);}}
+
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));activeTab=b.dataset.tab;loadTab();});
  sb.auth.onAuthStateChange((_event,session)=>{if(session){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');refreshAll();}});
- loginView();
+ loginView().then(()=>handleMetaCallback()).catch(e=>note('globalStatus',e.message,true));
 })();
 </script>
 </body>
