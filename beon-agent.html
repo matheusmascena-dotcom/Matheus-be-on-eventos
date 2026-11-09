@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Be·On Agent — Curadoria de eventos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#06040b;--panel:#120d1b;--line:#ffffff18;--muted:#a49ab5;--teal:#3fe0d0;--pink:#ff7cae;--gold:#efc66c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f0fa;font:14px/1.5 'Space Grotesk',sans-serif}.wrap{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{color:var(--teal);letter-spacing:.13em;font-size:11px}.title{font:48px/1 'Bebas Neue';margin:2px 0 6px}.muted{color:var(--muted);font-size:12px}.box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:14px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.kpi{border:1px solid var(--line);border-radius:12px;padding:13px}.kpi b{font:30px 'Bebas Neue';display:block}.tabs{display:flex;gap:7px;flex-wrap:wrap}.tabs button.active{border-color:var(--teal);color:var(--teal)}button,input,textarea,select{font:inherit}button{padding:10px 13px;border:1px solid var(--line);background:#ffffff08;color:#fff;border-radius:9px;cursor:pointer}button.primary{background:var(--teal);color:#051311;border:0;font-weight:700}button.danger{border-color:#ff7cae66;color:var(--pink)}button:disabled{opacity:.45;cursor:not-allowed}input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:#08060d;color:#fff}textarea{min-height:84px;resize:vertical}.field{display:grid;gap:5px}.field span{font-size:11px;color:var(--muted)}.field.full{grid-column:1/-1}.status{font-size:12px;color:var(--teal);min-height:18px}.error{color:var(--pink)}.warn{color:var(--gold)}.hidden{display:none!important}.candidate{border:1px solid var(--line);border-radius:13px;padding:14px;margin-top:10px}.postline{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}.source{color:var(--teal);text-decoration:none;overflow-wrap:anywhere}.source:hover{text-decoration:underline}.preview{max-width:220px;max-height:190px;border-radius:9px;object-fit:contain;background:#08060d}.post-caption{white-space:pre-wrap;overflow-wrap:anywhere;color:#d6cfdf;font-size:12px;max-height:155px;overflow:auto;border-left:2px solid var(--teal);padding:7px 10px;margin:10px 0}.candidate-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.foot{font-size:11px;color:#8f859d;margin-top:14px}.pill{display:inline-block;padding:3px 8px;border:1px solid var(--line);border-radius:20px;font-size:11px;color:var(--muted)}a{color:var(--teal)}@media(max-width:760px){.wrap{padding:14px}.title{font-size:40px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid,.candidate-form{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="top">
+ <div><div class="brand">BE·ON / CURADORIA INTELIGENTE</div><h1 class="title">AGENTE DE EVENTOS</h1><div class="muted">Monitoramento de @beonentertainment · revisão humana antes de publicar</div></div>
+ <div class="row"><a href="admin-v4.html">← Voltar ao CMS</a><button id="logout" class="hidden">Sair</button></div>
+</header>
+<section id="login" class="box">
+ <h2 style="margin-top:0">Acesso administrativo</h2>
+ <form id="loginForm" class="grid">
+  <label class="field"><span>E-mail</span><input id="email" type="email" autocomplete="username" required></label>
+  <label class="field"><span>Senha</span><input id="password" type="password" autocomplete="current-password" required></label>
+  <div class="field full row" style="justify-content:flex-end"><button class="primary" id="loginButton">Entrar</button></div>
+ </form><div id="loginError" class="status error"></div>
+</section>
+<section id="app" class="hidden">
+ <div class="box">
+  <div class="row" style="justify-content:space-between"><div><b>Visão geral</b><div class="muted">O agente consulta novas publicações uma vez por hora (horário cheio).</div></div><button id="refresh">Atualizar painel</button></div>
+  <div class="kpis" style="margin-top:12px">
+   <div class="kpi"><b id="kPosts">—</b><span class="muted">Publicações armazenadas</span></div>
+   <div class="kpi"><b id="kCandidates">—</b><span class="muted">Aguardando aprovação</span></div>
+   <div class="kpi"><b id="kUncertain">—</b><span class="muted">Precisam de triagem</span></div>
+   <div class="kpi"><b id="kDuplicates">—</b><span class="muted">Possíveis duplicidades</span></div>
+  </div>
+  <div id="connectionStatus" class="status" style="margin-top:12px">Verificando conexão…</div>
+  <div class="row" style="margin-top:9px"><button id="scan" class="primary">Verificar agora</button><span id="scanStatus" class="muted"></span></div>
+ </div>
+ <div class="box">
+  <h2 style="margin:0 0 8px">Conectar Instagram via Meta</h2>
+  <p class="muted">A conexão usa a API oficial da Meta. O token é enviado diretamente ao Supabase por HTTPS e guardado apenas em armazenamento restrito do servidor; ele não é salvo no navegador, no GitHub ou exibido novamente.</p>
+  <label class="field"><span>Token de acesso Meta (não compartilhe no chat)</span><input id="metaToken" type="password" autocomplete="off" placeholder="Cole o token de acesso da Meta"></label>
+  <div class="row" style="margin-top:9px"><button id="connectMeta" class="primary">Validar e conectar</button><span id="metaStatus" class="muted"></span></div>
+  <p class="foot">Requisitos usuais: conta profissional de Instagram (Business ou Creator) vinculada a uma Página do Facebook e permissões como pages_show_list, instagram_basic e pages_read_engagement. A Meta precisa permitir Business Discovery para o perfil de destino.</p>
+ </div>
+ <div class="box">
+  <div class="tabs"><button data-tab="pending" class="active">Candidatos para aprovação</button><button data-tab="uncertain">Publicações para triagem</button><button data-tab="history">Histórico de execuções</button></div>
+  <div id="queue" style="margin-top:12px"></div>
+ </div>
+</section>
+<div id="globalStatus" class="status" style="margin-top:12px"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+ const URL='https://bellpluuhrrluwsgouob.supabase.co';
+ const KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
+ const FN=URL+'/functions/v1/beon-agent';
+ const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ const $=id=>document.getElementById(id);
+ let activeTab='pending';
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function note(id,msg,error=false){$(id).textContent=msg||'';$(id).className=error?'status error':'status';}
+ async function call(action,payload={}) {
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente.');
+  const res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({action,...payload})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||data.ok===false)throw new Error(data.error||data.reason||'Falha na operação.');
+  return data;
+ }
+ async function loginView(){
+  const {data:{session}}=await sb.auth.getSession();
+  $('login').classList.toggle('hidden',!!session);$('app').classList.toggle('hidden',!session);$('logout').classList.toggle('hidden',!session);
+  if(session){const {data:user}=await sb.auth.getUser();const {data:admin,error}=await sb.from('admin_users').select('is_active,role').eq('user_id',user.user.id).maybeSingle();if(error||!admin?.is_active){await sb.auth.signOut();$('login').classList.remove('hidden');$('app').classList.add('hidden');note('loginError','Conta sem permissão administrativa.',true);return;}await refreshAll();}
+ }
+ async function refreshAll(){
+  try{
+   const data=await call('status');
+   $('kPosts').textContent=data.counts.posts;
+   $('kCandidates').textContent=data.counts.pendingCandidates;
+   $('kUncertain').textContent=data.counts.uncertainPosts??'—';
+   $('kDuplicates').textContent=data.counts.duplicates??'—';
+   const s=data.source;
+   $('connectionStatus').textContent='@'+s.handle+' · '+(s.access_status==='connected'?'Meta conectada':s.access_status==='needs_credentials'?'Aguardando conexão Meta':s.access_status==='error'?'Erro de conexão':'Pausado')+' · Intervalo: '+s.monitor_interval_minutes+' min'+(s.last_checked_at?' · Última checagem: '+new Date(s.last_checked_at).toLocaleString('pt-BR'):'');
+   $('connectionStatus').className='status'+(s.access_status==='error'?' error':s.access_status==='needs_credentials'?' warn':'');
+   if(s.last_error) $('connectionStatus').textContent+=' · '+s.last_error;
+   await loadTab();
+  }catch(e){note('globalStatus',e.message,true);}
+ }
+ async function loadTab(){
+  const host=$('queue');host.innerHTML='<div class="muted">Carregando…</div>';
+  try{
+   if(activeTab==='pending'){
+    const {data:candidates,error}=await sb.from('beon_event_candidates').select('*').eq('status','pending_review').order('created_at',{ascending:false});
+    if(error)throw error;
+    const ids=(candidates||[]).map(c=>c.source_primary_post_id);
+    const {data:posts, error:postError}=ids.length?await sb.from('beon_agent_posts').select('*').in('id',ids):{data:[],error:null};
+    if(postError)throw postError;
+    const map=new Map((posts||[]).map(p=>[p.id,p]));
+    host.innerHTML=candidates?.length?candidates.map(c=>candidateCard(c,map.get(c.source_primary_post_id))).join(''):'<div class="muted">Nenhum evento aguardando aprovação. O agente não publica nada sem sua confirmação.</div>';
+    attachCandidateHandlers();
+   }else if(activeTab==='uncertain'){
+    const {data:posts,error}=await sb.from('beon_agent_posts').select('*').eq('status','needs_review').order('posted_at',{ascending:false}).limit(100);
+    if(error)throw error;
+    host.innerHTML=posts?.length?posts.map(p=>postCard(p)).join(''):'<div class="muted">Nenhuma publicação ambígua aguardando triagem.</div>';
+    host.querySelectorAll('[data-create-candidate]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await call('create_candidate_from_post',{postId:b.dataset.createCandidate});await loadTab();await refreshKpis();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
+   }else{
+    const {data:runs,error}=await sb.from('beon_agent_runs').select('*').order('started_at',{ascending:false}).limit(30);
+    if(error)throw error;
+    host.innerHTML=runs?.length?'<div style="display:grid;gap:8px">'+runs.map(r=>'<div class="candidate"><div class="postline"><b>'+esc(r.status.toUpperCase())+'</b><span class="pill">'+esc(r.trigger_type)+'</span></div><div class="muted">'+esc(new Date(r.started_at).toLocaleString('pt-BR'))+' · '+esc(r.posts_fetched)+' lidos · '+esc(r.posts_new)+' novos · '+esc(r.candidates_created)+' candidatos · '+esc(r.duplicates_found)+' duplicados · '+esc(r.promotions_ignored)+' divulgações ignoradas</div>'+(r.error_message?'<div class="error">'+esc(r.error_message)+'</div>':'')+'</div>').join('')+'</div>':'<div class="muted">Nenhuma execução registrada.</div>';
+   }
+  }catch(e){host.innerHTML='<div class="status error">'+esc(e.message)+'</div>';}
+ }
+ function sourceBlock(p){
+  if(!p)return '<div class="warn">Publicação de origem não encontrada.</div>';
+  return '<div class="postline"><a class="source" href="'+esc(p.permalink)+'" target="_blank" rel="noopener noreferrer">Abrir publicação original ↗</a><span class="pill">'+esc(p.media_type||'Mídia')+' · '+esc(p.posted_at?new Date(p.posted_at).toLocaleString('pt-BR'):'Data indisponível')+'</span></div>'+
+   (p.media_preview_url?'<div style="margin-top:9px"><img class="preview" src="'+esc(p.media_preview_url)+'" alt="Prévia temporária da publicação original"></div>':'')+
+   '<div class="post-caption">'+esc(p.caption||'[Sem legenda — revisar texto do flyer na origem]')+'</div>'+
+   '<div class="foot">Fonte registrada: @beonentertainment · '+esc(p.permalink)+'<br>Prévia para conferência. Esta mídia não será copiada para o site automaticamente.</div>';
+ }
+ function postCard(p){
+  return '<article class="candidate">'+sourceBlock(p)+'<div class="row" style="justify-content:space-between;margin-top:10px"><span class="pill">Ambígua · '+esc(Math.round((p.confidence||0)*100))+'% confiança</span><button class="primary" data-create-candidate="'+esc(p.id)+'">Criar candidato para revisão</button></div><div class="foot">'+esc(p.classification_reason||'Necessita revisão humana.')+'</div></article>';
+ }
+ function candidateCard(c,p){
+  const rights=c.image_rights_status||'not_verified';
+  return '<article class="candidate" data-card="'+esc(c.id)+'">'+sourceBlock(p)+
+   '<div class="row" style="margin-top:12px"><span class="pill">Candidato a evento</span><span class="pill">Aguardando aprovação</span></div>'+
+   '<form class="candidate-form" data-review-form="'+esc(c.id)+'">'+
+    field(c.id,'event_name','Nome do evento',c.event_name||'')+
+    '<label class="field"><span>Data do evento</span><input name="event_date" type="date" value="'+esc(c.event_date||'')+'"></label>'+
+    field(c.id,'location','Local',c.location||'')+
+    field(c.id,'artists','Line-up / artistas',c.artists||'')+
+    field(c.id,'purchase_url','Link oficial de ingressos',c.purchase_url||'')+
+    '<label class="field full"><span>Descrição autoral para o site (não copiar a legenda do post)</span><textarea name="description" placeholder="Escreva uma descrição original, factual e curta.">'+esc(c.suggested_description||'')+'</textarea></label>'+
+    '<label class="field full"><span>URL da imagem (opcional; só use mídia própria ou autorizada)</span><input name="image_url" type="url" value="'+esc(c.image_url||'')+'" placeholder="Deixe vazio se não houver autorização de uso"></label>'+
+    '<label class="field"><span>Direito de uso da imagem</span><select name="image_rights_status">'+['not_verified','authorized','owned','licensed','permission_required'].map(x=>'<option value="'+x+'" '+(rights===x?'selected':'')+'>'+({not_verified:'Não verificado',authorized:'Autorização confirmada',owned:'Material próprio',licensed:'Licenciado',permission_required:'Permissão necessária'}[x])+'</option>').join('')+'</select></label>'+
+    '<label class="field"><span>Observações da revisão</span><input name="review_notes" value="'+esc(c.review_notes||'')+'" placeholder="Ex.: link de compra confirmado"></label>'+
+    '<div class="row full" style="grid-column:1/-1;justify-content:flex-end"><button type="button" data-save="'+esc(c.id)+'">Salvar revisão</button><button type="button" class="danger" data-reject="'+esc(c.id)+'">Reprovar</button><button type="button" class="primary" data-approve="'+esc(c.id)+'">Aprovar e publicar</button></div>'+
+   '</form></article>';
+ }
+ function field(id,name,label,value){return '<label class="field"><span>'+label+'</span><input name="'+name+'" value="'+esc(value)+'"></label>';}
+ function formData(id){
+  const form=document.querySelector('[data-review-form="'+CSS.escape(id)+'"]');const obj=Object.fromEntries(new FormData(form).entries());return {candidateId:id,...obj};
+ }
+ function attachCandidateHandlers(){
+  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await call('save',formData(b.dataset.save));note('globalStatus','Revisão salva. Ainda não foi publicada.');}catch(e){note('globalStatus',e.message,true);}finally{b.disabled=false;}});
+  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('Aprovar e publicar este evento no site?'))return;b.disabled=true;try{const r=await call('approve',formData(b.dataset.approve));if(r.duplicate)throw new Error('A publicação foi identificada como duplicada. Nenhum novo evento foi criado.');note('globalStatus','Evento aprovado e publicado no site.');await refreshAll();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
+  document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=async()=>{if(!confirm('Reprovar este candidato?'))return;b.disabled=true;try{await call('reject',{candidateId:b.dataset.reject,reason:'Reprovado manualmente no painel do agente.'});note('globalStatus','Candidato reprovado.');await refreshAll();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
+ }
+ async function refreshKpis(){const d=await call('status');$('kPosts').textContent=d.counts.posts;$('kCandidates').textContent=d.counts.pendingCandidates;$('kUncertain').textContent=d.counts.uncertainPosts??'—';$('kDuplicates').textContent=d.counts.duplicates??'—';}
+ $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginButton').disabled=false;if(r.error){note('loginError',r.error.message,true);return;}note('loginError','');await loginView();};
+ $('logout').onclick=async()=>{await sb.auth.signOut();location.reload();};
+ $('refresh').onclick=refreshAll;
+ $('scan').onclick=async()=>{ $('scan').disabled=true;note('scanStatus','Consultando Instagram…');try{const r=await call('scan');note('scanStatus',r.ok?'Finalizado: '+r.fetched+' publicações lidas, '+r.candidatesCreated+' candidatos e '+r.duplicatesFound+' duplicidades.':r.reason,true);await refreshAll();}catch(e){note('scanStatus',e.message,true);}finally{$('scan').disabled=false;}};
+ $('connectMeta').onclick=async()=>{const token=$('metaToken').value.trim();if(!token){note('metaStatus','Informe o token Meta.',true);return;}$('connectMeta').disabled=true;note('metaStatus','Validando permissões e Business Discovery…');try{const result=await call('save_meta_token',{accessToken:token});$('metaToken').value='';note('metaStatus','Conectado: @'+result.target+(result.page?' · Página '+result.page:'')+'. Token armazenado com segurança.');await refreshAll();}catch(e){note('metaStatus',e.message,true);}finally{$('connectMeta').disabled=false;}};
+ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));activeTab=b.dataset.tab;loadTab();});
+ sb.auth.onAuthStateChange((_event,session)=>{if(session){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');refreshAll();}});
+ loginView();
+})();
+</script>
+</body>
+</html>
