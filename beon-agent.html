@@ -37,7 +37,19 @@
   <div class="row" style="margin-top:9px"><button id="scan" class="primary">Verificar agora</button><span id="scanStatus" class="muted"></span></div>
  </div>
  <div class="box">
-  <h2 style="margin:0 0 8px">Conectar Instagram via Meta</h2>
+  <h2 style="margin:0 0 8px">Etapa 1 — Preparar sua Página do Facebook</h2>
+  <p class="muted">Como você ainda não tem uma Página, crie uma Página própria usando seu perfil pessoal do Facebook. Você será o administrador dela. Não precisa ter acesso à Página da Be-On nem criar uma Página em nome da produtora.</p>
+  <div class="row"><a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener noreferrer">Criar minha Página no Facebook ↗</a></div>
+  <ol class="muted" style="padding-left:20px">
+   <li>Use um nome que represente você, por exemplo <b>Matheus Mascena</b> ou <b>Matheus Mascena — Música e Eventos</b>.</li>
+   <li>Depois de criar, confirme em Configurações da Página → Acesso à Página que seu perfil pessoal aparece com controle total.</li>
+   <li>No Instagram: Perfil → Editar perfil → Página → Conectar ou criar. Selecione a Página que acabou de criar.</li>
+   <li>Volte aqui e só prossiga quando a Página aparecer vinculada ao Instagram profissional.</li>
+  </ol>
+  <p class="foot">Não habilite permissões de mensagens por necessidade do agente: ele só precisa ler publicações públicas. A conexão não exige acesso administrativo à Página da Be-On.</p>
+ </div>
+ <div class="box">
+  <h2 style="margin:0 0 8px">Etapa 2 — Conectar Instagram via Meta</h2>
   <p class="muted">A conexão usa a API oficial da Meta. O token é enviado diretamente ao Supabase por HTTPS e guardado apenas em armazenamento restrito do servidor; ele não é salvo no navegador, no GitHub ou exibido novamente.</p>
   <label class="field"><span>Token de acesso Meta (não compartilhe no chat)</span><input id="metaToken" type="password" autocomplete="off" placeholder="Cole o token de acesso da Meta"></label>
   <div class="row" style="margin-top:9px"><button id="connectMeta" class="primary">Validar e conectar</button><span id="metaStatus" class="muted"></span></div>
