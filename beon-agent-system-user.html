@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conexão segura Meta · Agente Be-On</title>
+<style>
+:root{color-scheme:dark;--bg:#08060d;--panel:#151020;--line:#ffffff20;--muted:#b3a9c5;--teal:#3fe0d0;--pink:#ff86ad}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f0fa;font:15px/1.55 Arial,sans-serif}.wrap{max-width:760px;margin:32px auto;padding:18px}.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin:14px 0}h1{margin:0 0 8px;font-size:28px}h2{margin:0 0 10px;font-size:19px}.muted{color:var(--muted);font-size:13px}.field{display:grid;gap:6px;margin:13px 0}.field span{font-size:13px;color:var(--muted)}input{width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#08060d;color:white;font:inherit}button{border:0;border-radius:9px;padding:12px 16px;background:var(--teal);color:#061412;font-weight:700;cursor:pointer}button:disabled{opacity:.45;cursor:wait}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.status{font-size:13px;min-height:20px;color:var(--teal);overflow-wrap:anywhere}.error{color:var(--pink)}a{color:var(--teal)}.hidden{display:none!important}.foot{font-size:12px;color:var(--muted);margin-top:14px}code{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main class="wrap">
+ <div class="muted">BE·ON / CONEXÃO META</div>
+ <h1>Conectar usuário de sistema</h1>
+ <p class="muted">Use esta tela para enviar o token do usuário de sistema diretamente ao servidor Supabase. O token não é salvo no navegador, no GitHub nem exibido novamente.</p>
+ <section id="login" class="box">
+  <h2>Acesso administrativo</h2>
+  <form id="loginForm">
+   <label class="field"><span>E-mail</span><input id="email" type="email" autocomplete="username" required></label>
+   <label class="field"><span>Senha</span><input id="password" type="password" autocomplete="current-password" required></label>
+   <button id="loginButton">Entrar</button>
+  </form>
+  <div id="loginStatus" class="status error"></div>
+ </section>
+ <section id="panel" class="hidden">
+  <div class="box">
+   <h2>Dados do ativo</h2>
+   <p class="muted">O usuário de sistema já recebeu acesso ao aplicativo e à conta profissional do Instagram. Informe o ID numérico da Página do Facebook que está vinculada a <b>@mat_mascena97</b>. O servidor usará esse ID para obter o ID Instagram associado, sem precisar consultar a lista /me de contas atribuídas.</p>
+   <label class="field"><span>ID da Página do Facebook (somente números)</span><input id="pageId" inputmode="numeric" autocomplete="off" placeholder="Ex.: 123456789012345"></label>
+   <p class="foot">Você encontra o ID em Configurações do portfólio → Contas → Páginas → selecione “Matheus Alves - Eventos & Música eletrônica” → informações/detalhes da Página.</p>
+  </div>
+  <div class="box">
+   <h2>Token do usuário de sistema</h2>
+   <label class="field"><span>Token gerado para “BeOn Agente” (não compartilhe no chat)</span><input id="systemToken" type="password" autocomplete="off" placeholder="Cole o token aqui"></label>
+   <div class="row"><button id="connect">Validar e conectar</button><span id="connectStatus" class="status"></span></div>
+   <p class="foot">O servidor verifica o aplicativo de origem, as permissões instagram_basic e instagram_manage_insights, o vínculo Página ↔ Instagram e o Business Discovery de @beonentertainment. Se a Meta negar acesso, o token não será ativado.</p>
+  </div>
+ </section>
+ <div class="row"><a href="beon-agent.html">← Voltar ao painel do agente</a><span style="flex:1"></span><button id="logout" class="hidden" type="button">Sair</button></div>
+ <div id="globalStatus" class="status"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+ const URL='https://bellpluuhrrluwsgouob.supabase.co';
+ const KEY='sb_publishable_oQq38KO1A-4mZttQVL6O-g__RZKKIGX';
+ const FN=URL+'/functions/v1/beon-agent';
+ const sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ const $=id=>document.getElementById(id);
+ function note(id,msg,error=false){$(id).textContent=msg||'';$(id).className='status'+(error?' error':'');}
+ async function call(action,payload={}) {
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.access_token)throw new Error('Sua sessão administrativa expirou. Entre novamente.');
+  const response=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+session.access_token},body:JSON.stringify({action,...payload})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data.ok===false)throw new Error(data.error||data.reason||'Falha na operação.');
+  return data;
+ }
+ async function showSession(){
+  const {data:{session}}=await sb.auth.getSession();
+  $('login').classList.toggle('hidden',!!session);$('panel').classList.toggle('hidden',!session);$('logout').classList.toggle('hidden',!session);
+  if(session){
+   const {data:{user}}=await sb.auth.getUser();
+   const {data:admin,error}=await sb.from('admin_users').select('is_active,role').eq('user_id',user.id).maybeSingle();
+   if(error||!admin?.is_active||!['admin','editor'].includes(admin.role)){await sb.auth.signOut();$('login').classList.remove('hidden');$('panel').classList.add('hidden');note('loginStatus','Conta sem permissão administrativa.',true);}
+  }
+ }
+ $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('loginButton').disabled=false;if(error){note('loginStatus',error.message,true);return;}note('loginStatus','');await showSession();};
+ $('logout').onclick=async()=>{await sb.auth.signOut();location.reload();};
+ $('connect').onclick=async()=>{
+  const accessToken=$('systemToken').value.trim(),pageId=$('pageId').value.trim();
+  if(!accessToken||!pageId){note('connectStatus','Informe o token e o ID da Página.',true);return;}
+  $('connect').disabled=true;note('connectStatus','Validando token, Página e Business Discovery no servidor…');
+  try{
+   const result=await call('connect_system_user_page',{accessToken,pageId});
+   $('systemToken').value='';
+   note('connectStatus','Conectado! Página: '+result.page+' · Instagram: @'+result.account+' · Business Discovery: @'+result.target+'. Token protegido no servidor.');
+   $('pageId').value=pageId;
+  }catch(error){note('connectStatus',error.message,true);}
+  finally{$('connect').disabled=false;}
+ };
+ sb.auth.onAuthStateChange((_event,session)=>{if(session)showSession();});
+ showSession();
+})();
+</script>
+</body>
+</html>
