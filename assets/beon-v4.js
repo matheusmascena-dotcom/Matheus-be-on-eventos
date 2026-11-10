@@ -195,7 +195,7 @@ qs('#v4Sheet',panel).onchange=async (ev)=>{const file=ev.target.files?.[0]; if(!
   scheduleSaoPauloDayChangeRefresh();
   publicHome(); initAdmin(); wireTicketClicks();
 
-  try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=20260928-1';s.defer=true;document.head.appendChild(s);}}catch{}
+  try{if(!window.__beonAnalyticsV2Loader){window.__beonAnalyticsV2Loader=true;const s=document.createElement('script');s.src='assets/beon-analytics-v2.js?v=9974c5544f0a18ec85f272ed9609e28b8f254761';s.defer=true;document.head.appendChild(s);}}catch{}
 
   try {
     const style=document.createElement('style');
