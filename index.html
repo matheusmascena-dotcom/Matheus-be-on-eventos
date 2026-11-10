@@ -62,6 +62,24 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;back
 .hero-title{font-family:"Bebas Neue","Arial Narrow",Arial,sans-serif!important;line-height:1!important;overflow:visible!important;padding-top:.08em!important;padding-bottom:.06em!important}
 </style>
 <link rel="stylesheet" href="assets/beon-page-transition-v1.css?v=d333b4ec9c7bd6eeca98a25154aebb6be6e04bff">
+
+<style id="beon-whatsapp-floating">
+.whatsapp-fab{
+ position:fixed;right:24px;bottom:24px;z-index:79;display:inline-flex;align-items:center;gap:10px;
+ padding:11px 17px 11px 11px;border:1px solid rgba(255,255,255,.32);border-radius:999px;
+ background:linear-gradient(135deg,#25d366,#16b957);color:#06150b;text-decoration:none;
+ box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 22px rgba(37,211,102,.20);
+ font:700 13px 'Space Grotesk',sans-serif;letter-spacing:.01em;
+ transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.whatsapp-fab:hover{transform:translateY(-3px);filter:brightness(1.04);box-shadow:0 16px 40px rgba(0,0,0,.48),0 0 28px rgba(37,211,102,.28)}
+.whatsapp-fab:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.whatsapp-fab-icon{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:#07140b;color:#25d366;flex:none}
+.whatsapp-fab-icon svg{display:block;width:21px;height:21px}
+.whatsapp-fab-label{white-space:nowrap}
+@media(max-width:700px){.whatsapp-fab{display:none}}
+@media(prefers-reduced-motion:reduce){.whatsapp-fab{transition:none}.whatsapp-fab:hover{transform:none}}
+</style>
 </head>
 <body>
 <header><div class="wrap nav"><a class="brand" href="#top"><i class="dot"></i>BE·ON</a><div class="header-right"><div class="live-clock" id="liveClock" aria-live="polite">Agora · --</div><div class="pill">5% OFF · <b>MATHEUSMASCENA</b></div><a class="pill" href="?admin=1">Admin</a></div></div></header>
@@ -91,6 +109,16 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;back
 </main>
 <footer><div class="wrap">Eventos BeOn · Matheus Alves Mascena — Embaixador BeOn</div></footer>
 <nav class="mobile-nav" aria-label="Navegação móvel"><a href="#top"><small>⌂</small>Início</a><button id="mobileSearch"><small>⌕</small>Buscar</button><a href="#eventos"><small>🎫</small>Eventos</a><a href="?favorites=1#eventos"><small>♥</small>Favoritos</a><a href="https://wa.me/5511942334607" target="_blank" rel="noopener"><small>💬</small>WhatsApp</a></nav>
+
+<a class="whatsapp-fab" href="https://wa.me/5511942334607?text=Ol%C3%A1%21%20Encontrei%20seu%20site%20de%20eventos%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es." target="_blank" rel="noopener noreferrer" aria-label="Fale comigo pelo WhatsApp">
+ <span class="whatsapp-fab-icon" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+   <path d="M20.1 11.8a8.1 8.1 0 0 1-12 7.1L3.5 20l1.2-4.4A8.1 8.1 0 1 1 20.1 11.8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+   <path d="M8.6 8.2c.2-.5.5-.5.8-.5h.4c.2 0 .3.1.4.4l.6 1.5c.1.2 0 .4-.1.5l-.5.6c-.2.2-.2.3-.1.5.4.8 1 1.4 1.8 1.8.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l1.4.7c.2.1.4.2.4.4 0 .2-.1.8-.5 1.2-.4.4-1 .6-1.4.6-.4 0-1-.1-1.7-.4-.8-.3-1.7-.9-2.5-1.7-.7-.7-1.3-1.6-1.6-2.3-.3-.7-.3-1.3-.2-1.7.1-.3.5-.8 1-1.1Z" fill="currentColor"/>
+  </svg>
+ </span>
+ <span class="whatsapp-fab-label">Fale comigo</span>
+</a>
 <div id="admin" style="display:none;position:fixed;inset:0;z-index:100;background:#06040bf2;backdrop-filter:blur(8px);padding:16px;overflow:auto"><div style="max-width:1050px;margin:auto;background:#120d1b;border:1px solid #ffffff18;border-radius:18px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><small style="color:#3fe0d0">BE·ON 3.0</small><h2 style="font:42px 'Bebas Neue';margin:0">Painel administrativo</h2><div id="adminStatus" style="font-size:12px;color:#a49ab5">Login necessário.</div></div><button id="adminClose" style="border:1px solid #ffffff22;background:#ffffff0d;color:#fff;border-radius:9px;padding:10px 13px;cursor:pointer">Fechar</button></div><div id="adminLogin" style="margin-top:18px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><input id="adminEmail" placeholder="E-mail" style="width:100%;padding:11px;border-radius:10px;border:1px solid #ffffff18;background:#08060d;color:#fff"><input id="adminPass" type="password" placeholder="Senha" style="width:100%;padding:11px;border-radius:10px;border:1px solid #ffffff18;background:#08060d;color:#fff"></div><button id="adminEnter" style="margin-top:10px;padding:10px 13px;border:0;border-radius:9px;font-weight:700">Entrar</button></div><div id="adminApp" style="display:none;margin-top:18px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><input id="eName" placeholder="Nome"><input id="eDate" type="date"><input id="eLocation" placeholder="Local"><input id="eArtists" placeholder="Artistas"><input id="eBuy" placeholder="Link compra"><input id="eImage" placeholder="URL capa"><input id="eSource" placeholder="Pasta Drive / fonte"><select id="ePublished"><option value="true">Publicado</option><option value="false">Oculto</option></select></div><textarea id="eDesc" placeholder="Descrição" style="width:100%;min-height:90px;margin-top:10px;padding:11px;border-radius:10px;border:1px solid #ffffff18;background:#08060d;color:#fff"></textarea><div style="display:flex;gap:8px;margin-top:10px"><button id="adminSave" style="padding:10px 13px;border:0;border-radius:9px;font-weight:700">Salvar</button><button id="adminNew" style="padding:10px 13px;border:1px solid #ffffff18;background:#ffffff08;color:#fff;border-radius:9px">Novo</button><button id="adminOut" style="padding:10px 13px;border:1px solid #ffffff18;background:#ffffff08;color:#fff;border-radius:9px">Sair</button></div><div id="adminList" style="margin-top:15px;font-size:12px"></div></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
