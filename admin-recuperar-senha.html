@@ -110,6 +110,16 @@ a:hover{text-decoration:underline}
     status('requestStatus',errorDescription || 'O link de recuperação expirou ou já foi utilizado. Solicite um novo link.',true);
   }
 
+  // Fallback caso o evento de recuperação seja emitido antes da inscrição do listener.
+  if (hashParams.get('type') === 'recovery') {
+    sb.auth.getSession().then(({data:{session}}) => {
+      if (session) {
+        showPasswordForm();
+        status('passwordStatus','Link validado. Defina sua nova senha.');
+      }
+    });
+  }
+
   $('requestForm').addEventListener('submit',async event=>{
     event.preventDefault();
     const email=$('email').value.trim();
