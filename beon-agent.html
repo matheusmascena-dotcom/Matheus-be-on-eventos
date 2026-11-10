@@ -121,7 +121,16 @@
     const {data:posts,error}=await sb.from('beon_agent_posts').select('*').eq('status','needs_review').order('posted_at',{ascending:false}).limit(100);
     if(error)throw error;
     host.innerHTML=posts?.length?posts.map(p=>postCard(p)).join(''):'<div class="muted">Nenhuma publicação ambígua aguardando triagem.</div>';
-    host.querySelectorAll('[data-create-candidate]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await call('create_candidate_from_post',{postId:b.dataset.createCandidate});await loadTab();await refreshKpis();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
+    host.querySelectorAll('[data-create-candidate]').forEach(b=>b.onclick=async()=>{
+     b.disabled=true;
+     try{
+      await call('create_candidate_from_post',{postId:b.dataset.createCandidate});
+      activeTab='pending';
+      document.querySelectorAll('[data-tab]').forEach(x=>{x.classList.toggle('active',x.dataset.tab==='pending');});
+      await refreshAll();
+      note('globalStatus','Candidato criado. Complete os campos do evento na aba de aprovação; ainda não foi publicado.');
+     }catch(e){note('globalStatus',e.message,true);b.disabled=false;}
+    });
    }else{
     const {data:runs,error}=await sb.from('beon_agent_runs').select('*').order('started_at',{ascending:false}).limit(30);
     if(error)throw error;
