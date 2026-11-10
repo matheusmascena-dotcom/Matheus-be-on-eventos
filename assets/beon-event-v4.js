@@ -51,7 +51,7 @@
     try{
       const {data:e,error}=await sb.from('events').select('*').eq('slug',slug).eq('published',true).maybeSingle();
       if(error||!e){reveal();return;}
-      const publicUrl=new URL(location.href);publicUrl.searchParams.set('event',e.slug);publicUrl.hash='';const eventUrl=publicUrl.toString();
+      const publicUrl=new URL(location.href);['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src'].forEach(k=>publicUrl.searchParams.delete(k));publicUrl.searchParams.set('event',e.slug);publicUrl.hash='';const eventUrl=publicUrl.toString();
       const eventPast=!!e.event_date&&eventDayHasEnded(e.event_date);
       const description=`${e.name} — ${e.event_date?new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):''}. ${e.location||''}. ${eventPast?'Evento realizado. Veja as informações e fotos oficiais.':'Veja informações, fotos oficiais e compre seu ingresso com 5% de desconto usando o cupom MATHEUSMASCENA.'}`.replace(/\s+/g,' ').trim();
       document.title=`${e.name} | BeOn Eventos - Embaixador Matheus Mascena`;
@@ -64,6 +64,26 @@
       const mapUrl=e.source_url||'#';if(qs('#maps'))qs('#maps').href=mapUrl;
       const fb=qs('#favorite');if(fb){const paint=()=>{fb.textContent=getFavs().includes(e.slug)?'♥ Favoritado':'♡ Favoritar';};paint();fb.onclick=()=>{let vals=getFavs();vals=vals.includes(e.slug)?vals.filter(v=>v!==e.slug):[...vals,e.slug];saveFavs(vals);paint();};}
       const share=qs('#share');if(share){share.onclick=async()=>{try{if(navigator.share)await navigator.share({title:e.name,url:eventUrl});else{await navigator.clipboard?.writeText(eventUrl);share.textContent='✓ Link copiado';setTimeout(()=>share.textContent='↗ Compartilhar',1600);}}catch{}};}
+      const whatsappShare=qs('#whatsappShare');if(whatsappShare){
+        const trackedUrl=new URL(eventUrl);
+        trackedUrl.searchParams.set('utm_source','whatsapp');
+        trackedUrl.searchParams.set('utm_medium','messaging');
+        trackedUrl.searchParams.set('utm_campaign',e.slug||'beon_evento');
+        trackedUrl.searchParams.set('utm_content','event_page_whatsapp_share');
+        const dateLabel=e.event_date?new Date(e.event_date+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}):'';
+        const message=[
+          '🎧 Olha esse evento que encontrei no BeOn Eventos:',
+          e.name,
+          dateLabel?'📅 '+dateLabel:'',
+          e.location?'📍 '+e.location:'',
+          e.artists?'🎵 Line-up: '+e.artists:'',
+          e.sold_out?'🚫 Ingressos esgotados.':'🎟️ Confira os ingressos: '+purchaseUrl,
+          '🎁 Use o cupom MATHEUSMASCENA para 5% de desconto, quando aplicável.',
+          'Mais informações: '+trackedUrl.toString()
+        ].filter(Boolean).join('\n');
+        whatsappShare.href='https://wa.me/?text='+encodeURIComponent(message);
+        whatsappShare.onclick=()=>window.beonTrack?.('share_click',{event_id:e.id,placement:'event_page',action:'whatsapp_share'});
+      }
       const mapbox=qs('#mapbox');if(mapbox){const q=encodeURIComponent(e.location||'São Paulo, SP');mapbox.innerHTML=`<div class="maphead"><b>📍 Localização</b><a class="share" href="${esc(mapUrl)}" target="_blank" rel="noopener">Abrir no Maps ↗</a></div><iframe loading="lazy" src="https://www.google.com/maps?q=${q}&output=embed"></iframe>`;}
 
       const {data:photos}=await sb.from('event_gallery_photos').select('id,src_url,photo_name,position,credit_label,credit_url').eq('event_id',e.id).order('position',{ascending:true});
