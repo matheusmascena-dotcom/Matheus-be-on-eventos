@@ -268,7 +268,7 @@
     </div>`;
   }
 
-  function renderTab(){stopDraftTimer();const fn={events:showEvents,gallery:showGallery,sheet:showSheet,metrics:showMetrics}[tab];if(fn)fn();document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));}
+  function renderTab(){stopDraftTimer();const fn={events:showEvents,gallery:showGallery,sheet:showSheet,calendar:()=>window.showBeonPromotionCalendar?.(),metrics:showMetrics}[tab];if(fn)fn();document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));}
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
     if(tab==='events'&&document.querySelector('#eventEditorBox')&&formHasChanges()){
       const ok=confirm('Você está editando um evento. O rascunho ficará salvo e será restaurado quando voltar. Continuar para outra aba?');
@@ -281,6 +281,6 @@
   if(siteLink){siteLink.setAttribute('target','_blank');siteLink.setAttribute('rel','noopener');}
   window.addEventListener('beforeunload',e=>{if(!formHasChanges())return;persistCurrentForm();e.preventDefault();e.returnValue='';});
 
-  const initialTab=uiState().tab;if(initialTab&&['events','gallery','sheet','metrics'].includes(initialTab))tab=initialTab;
+  const initialTab=uiState().tab;if(initialTab&&['events','gallery','sheet','calendar','metrics'].includes(initialTab))tab=initialTab;
   init();
 })();
