@@ -180,7 +180,7 @@ qs('#v4Sheet',panel).onchange=async (ev)=>{const file=ev.target.files?.[0]; if(!
     const wait=setInterval(()=>{const app=qs('#adminApp'); if(app){clearInterval(wait); injectAdminUI(modal);}},100);
   }
 
-  function wireTicketClicks(){document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const href=a.getAttribute('href')||'';if(href.includes('ingresse.com')||href.includes('cart.ingresse.com')) metric('ticket_click');if(href.includes('wa.me/')||a.classList.contains('whatsapp-fab')) metric('analytics_whatsapp_click');});}
+  function wireTicketClicks(){document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const href=a.getAttribute('href')||'';if(href.includes('ingresse.com')||href.includes('cart.ingresse.com')) metric('ticket_click');});}
 
   window.addEventListener('beon-events-synced',()=>publicHome(false));
   function scheduleSaoPauloDayChangeRefresh(){
