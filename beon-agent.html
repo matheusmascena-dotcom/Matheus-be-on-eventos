@@ -141,28 +141,70 @@
  }
  function candidateCard(c,p){
   const rights=c.image_rights_status||'not_verified';
+  const extra=c.extracted_fields&&typeof c.extracted_fields==='object'?c.extracted_fields:{};
+  const published=extra.published!==false;
+  const soldOut=extra.sold_out===true;
   return '<article class="candidate" data-card="'+esc(c.id)+'">'+sourceBlock(p)+
    '<div class="row" style="margin-top:12px"><span class="pill">Candidato a evento</span><span class="pill">Aguardando aprovação</span></div>'+
    '<form class="candidate-form" data-review-form="'+esc(c.id)+'">'+
     field(c.id,'event_name','Nome do evento',c.event_name||'')+
     '<label class="field"><span>Data do evento</span><input name="event_date" type="date" value="'+esc(c.event_date||'')+'"></label>'+
-    field(c.id,'location','Local',c.location||'')+
+    field(c.id,'location','Localização',c.location||'')+
     field(c.id,'artists','Line-up / artistas',c.artists||'')+
-    field(c.id,'purchase_url','Link oficial de ingressos',c.purchase_url||'')+
-    '<label class="field full"><span>Descrição autoral para o site (não copiar a legenda do post)</span><textarea name="description" placeholder="Escreva uma descrição original, factual e curta.">'+esc(c.suggested_description||'')+'</textarea></label>'+
-    '<label class="field full"><span>URL da imagem (opcional; só use mídia própria ou autorizada)</span><input name="image_url" type="url" value="'+esc(c.image_url||'')+'" placeholder="Deixe vazio se não houver autorização de uso"></label>'+
+    field(c.id,'purchase_url','Link de compra',c.purchase_url||'')+
+    '<div class="field full"><span>Capa do evento (URL ou upload)</span><input name="image_url" type="url" value="'+esc(c.image_url||'')+'" placeholder="URL da capa (opcional)"><div class="row" style="margin-top:7px;align-items:center"><input name="cover_file" type="file" accept=".jpg,.jpeg,.png,.webp,.avif,image/jpeg,image/png,image/webp,image/avif"><button type="button" data-cover-upload="'+esc(c.id)+'">Carregar capa</button><span class="muted" data-cover-status="'+esc(c.id)+'">JPG, PNG, WEBP ou AVIF · até 8 MB</span></div></div>'+
+    '<label class="field"><span>Link do Google Maps</span><input name="source_url" type="url" value="'+esc(extra.source_url||'')+'" placeholder="https://www.google.com/maps/..."></label>'+
+    '<label class="field"><span>Status do evento</span><select name="published"><option value="true" '+(published?'selected':'')+'>Publicado</option><option value="false" '+(!published?'selected':'')+'>Oculto</option></select></label>'+
+    '<label class="field"><span>Status de ingressos</span><label style="display:flex;align-items:center;gap:8px;padding:10px 0;color:#f3eef8"><input name="sold_out" type="checkbox" '+(soldOut?'checked':'')+'> <span>Marcar como <b style="color:#ff79ab">SOLD OUT</b> e bloquear novas compras</span></label></label>'+
+    '<label class="field full"><span>Descrição do evento</span><textarea name="description" placeholder="Descrição original, factual e curta — não copie a legenda do Instagram.">'+esc(c.suggested_description||'')+'</textarea></label>'+
     '<label class="field"><span>Direito de uso da imagem</span><select name="image_rights_status">'+['not_verified','authorized','owned','licensed','permission_required'].map(x=>'<option value="'+x+'" '+(rights===x?'selected':'')+'>'+({not_verified:'Não verificado',authorized:'Autorização confirmada',owned:'Material próprio',licensed:'Licenciado',permission_required:'Permissão necessária'}[x])+'</option>').join('')+'</select></label>'+
     '<label class="field"><span>Observações da revisão</span><input name="review_notes" value="'+esc(c.review_notes||'')+'" placeholder="Ex.: link de compra confirmado"></label>'+
-    '<div class="row full" style="grid-column:1/-1;justify-content:flex-end"><button type="button" data-save="'+esc(c.id)+'">Salvar revisão</button><button type="button" class="danger" data-reject="'+esc(c.id)+'">Reprovar</button><button type="button" class="primary" data-approve="'+esc(c.id)+'">Aprovar e publicar</button></div>'+
+    '<div class="row full" style="grid-column:1/-1;justify-content:flex-end"><button type="button" data-save="'+esc(c.id)+'">Salvar revisão</button><button type="button" class="danger" data-reject="'+esc(c.id)+'">Reprovar</button><button type="button" class="primary" data-approve="'+esc(c.id)+'">Aprovar evento</button></div>'+
    '</form></article>';
  }
  function field(id,name,label,value){return '<label class="field"><span>'+label+'</span><input name="'+name+'" value="'+esc(value)+'"></label>';}
  function formData(id){
-  const form=document.querySelector('[data-review-form="'+CSS.escape(id)+'"]');const obj=Object.fromEntries(new FormData(form).entries());return {candidateId:id,...obj};
+  const form=document.querySelector('[data-review-form="'+CSS.escape(id)+'"]');
+  const obj=Object.fromEntries(new FormData(form).entries());
+  delete obj.cover_file;
+  obj.published=obj.published==='true';
+  obj.sold_out=obj.sold_out==='on';
+  return {candidateId:id,...obj};
  }
  function attachCandidateHandlers(){
-  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await call('save',formData(b.dataset.save));note('globalStatus','Revisão salva. Ainda não foi publicada.');}catch(e){note('globalStatus',e.message,true);}finally{b.disabled=false;}});
-  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('Aprovar e publicar este evento no site?'))return;b.disabled=true;try{const r=await call('approve',formData(b.dataset.approve));if(r.duplicate)throw new Error('A publicação foi identificada como duplicada. Nenhum novo evento foi criado.');note('globalStatus','Evento aprovado e publicado no site.');await refreshAll();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
+  document.querySelectorAll('[data-cover-upload]').forEach(b=>b.onclick=async()=>{
+   const id=b.dataset.coverUpload,form=document.querySelector('[data-review-form="'+CSS.escape(id)+'"]');
+   const status=document.querySelector('[data-cover-status="'+CSS.escape(id)+'"]');
+   const file=form?.elements.namedItem('cover_file')?.files?.[0];
+   try{
+    if(!file)throw new Error('Selecione uma imagem para a capa.');
+    const rights=form.elements.namedItem('image_rights_status')?.value;
+    if(!['authorized','owned','licensed'].includes(rights))throw new Error('Antes do upload, confirme o direito de uso: autorização, material próprio ou licenciado.');
+    if(!/^image\/(jpeg|png|webp|avif)$/.test(file.type))throw new Error('Formato não suportado. Use JPG, PNG, WEBP ou AVIF.');
+    if(file.size>8*1024*1024)throw new Error('A imagem deve ter no máximo 8 MB.');
+    const eventName=form.elements.namedItem('event_name')?.value.trim()||'evento';
+    const slug=eventName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'evento';
+    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path='event-covers/'+slug+'/'+Date.now()+'-'+crypto.randomUUID()+'-'+safe;
+    b.disabled=true;if(status)status.textContent='Enviando capa…';
+    const upload=await sb.storage.from('event-media').upload(path,file,{upsert:false,cacheControl:'31536000',contentType:file.type});
+    if(upload.error)throw upload.error;
+    const url=sb.storage.from('event-media').getPublicUrl(path).data.publicUrl;
+    form.elements.namedItem('image_url').value=url;
+    form.elements.namedItem('cover_file').value='';
+    if(status)status.textContent='Capa enviada. Salve a revisão para manter a URL.';
+   }catch(e){if(status)status.textContent=e.message||'Falha ao enviar capa.';note('globalStatus',e.message||'Falha ao enviar capa.',true);}
+   finally{b.disabled=false;}
+  });
+  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await call('save',formData(b.dataset.save));note('globalStatus','Revisão salva. O evento ainda não foi publicado.');}catch(e){note('globalStatus',e.message,true);}finally{b.disabled=false;}});
+  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{
+   const data=formData(b.dataset.approve);
+   const action=data.published?'publicado':'salvo como oculto';
+   if(!confirm('Aprovar este evento e deixá-lo '+action+' no site?'))return;
+   b.disabled=true;
+   try{const r=await call('approve',data);if(r.duplicate)throw new Error('A publicação foi identificada como duplicada. Nenhum novo evento foi criado.');note('globalStatus',r.published?'Evento aprovado e publicado no site.':'Evento aprovado e salvo como oculto.');await refreshAll();}
+   catch(e){note('globalStatus',e.message,true);b.disabled=false;}
+  });
   document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=async()=>{if(!confirm('Reprovar este candidato?'))return;b.disabled=true;try{await call('reject',{candidateId:b.dataset.reject,reason:'Reprovado manualmente no painel do agente.'});note('globalStatus','Candidato reprovado.');await refreshAll();}catch(e){note('globalStatus',e.message,true);b.disabled=false;}});
  }
  async function refreshKpis(){const d=await call('status');$('kPosts').textContent=d.counts.posts;$('kCandidates').textContent=d.counts.pendingCandidates;$('kUncertain').textContent=d.counts.uncertainPosts??'—';$('kDuplicates').textContent=d.counts.duplicates??'—';}
