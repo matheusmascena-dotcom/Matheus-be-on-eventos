@@ -254,7 +254,18 @@
     $('loadSheet').onclick=async()=>{if(!pendingSheet)return;const b=$('loadSheet');b.disabled=true;b.textContent='Carregando…';$('sheetStatus').textContent='Enviando dados para o Supabase…';try{const r=await sb.functions.invoke('admin-sync-spreadsheet',{body:{events:pendingSheet.events,config:pendingSheet.config}});if(r.error)throw r.error;$('sheetStatus').textContent=`Sincronização concluída: ${r.data?.importedEvents??pendingSheet.events.length} eventos e ${r.data?.configKeys??Object.keys(pendingSheet.config).length} configurações atualizados no Supabase.`;$('sheetInfo').textContent='Arquivo carregado com sucesso. Você pode selecionar outra planilha.';pendingSheet=null;$('sheet').value='';syncStatus();}catch(e){$('sheetStatus').textContent=e?.message||'Erro na sincronização.';}finally{b.disabled=false;b.textContent='Carregar arquivo';}};
   }
 
-  async function showMetrics(){const r=await sb.from('site_metrics').select('metric_type').order('created_at',{ascending:false}).limit(5000);if(r.error){setMsg(r.error.message,true);return;}const d=r.data||[],c=t=>d.filter(x=>x.metric_type===t).length;$('panel').innerHTML=`<h2>Métricas</h2><div class="kpis"><div class="kpi"><b>${c('page_view')}</b><div class="muted">Visitas</div></div><div class="kpi"><b>${c('event_view')}</b><div class="muted">Eventos vistos</div></div><div class="kpi"><b>${c('ticket_click')}</b><div class="muted">Cliques em ingresso</div></div><div class="kpi"><b>${c('favorite_toggle')}</b><div class="muted">Favoritos</div></div></div>`;}
+  async function showMetrics(){
+    const r=await sb.from('site_metrics').select('metric_type').order('created_at',{ascending:false}).limit(5000);
+    if(r.error){setMsg(r.error.message,true);return;}
+    const d=r.data||[],c=t=>d.filter(x=>x.metric_type===t).length;
+    $('panel').innerHTML=`<h2>Métricas</h2><div class="kpis">
+      <div class="kpi"><b>${c('page_view')}</b><div class="muted">Visitas</div></div>
+      <div class="kpi"><b>${c('event_view')}</b><div class="muted">Eventos vistos</div></div>
+      <div class="kpi"><b>${c('ticket_click')}</b><div class="muted">Cliques em ingresso</div></div>
+      <div class="kpi"><b>${c('favorite_toggle')}</b><div class="muted">Favoritos</div></div>
+      <div class="kpi"><b>${c('whatsapp_click')}</b><div class="muted">Cliques no WhatsApp</div></div>
+    </div>`;
+  }
 
   function renderTab(){stopDraftTimer();const fn={events:showEvents,gallery:showGallery,sheet:showSheet,metrics:showMetrics}[tab];if(fn)fn();document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));}
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
