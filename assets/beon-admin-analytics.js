@@ -72,6 +72,17 @@
     try{return new URL(row.path||'','https://beon.local').searchParams.get('utm_source')||'Direto / orgânico'}catch{return 'Direto / orgânico'}
   }
 
+  function campaignCounts(rows){
+    const counts={};
+    (rows||[]).forEach(row=>{
+      const campaign=String(row.campaign||'').trim();
+      if(!campaign)return;
+      const key=[campaign,row.source||'origem não informada',row.medium||'meio não informado',row.content||'peça não informada'].join(' · ');
+      counts[key]=(counts[key]||0)+1;
+    });
+    return counts;
+  }
+
   async function loadEvents(){
     const r=await db.from('events').select('id,name,event_date,slug').order('event_date');
     if(r.error)throw r.error;
@@ -122,9 +133,10 @@
 
     const sources={};
     views.forEach(x=>{const k=sourceOf(x);sources[k]=(sources[k]||0)+1});
+    const campaigns=campaignCounts(views);
 
     return {
-      rows,views,pageViews,eventViews,tickets,visitors,sessions,favorites,shares,maps,whatsapp,instagram,searches,eventRows,sources,
+      rows,views,pageViews,eventViews,tickets,visitors,sessions,favorites,shares,maps,whatsapp,instagram,searches,eventRows,sources,campaigns,
       legacy:{page:legacyPage.length,event:legacyEvent.length,tickets:legacyTicket.length},
       v2:{page:v2Page.length,tickets:v2Ticket.length}
     };
@@ -137,7 +149,7 @@
     return {...model,
       views:model.views.filter(keep),pageViews:model.pageViews.filter(keep),eventViews:model.eventViews.filter(keep),tickets:model.tickets.filter(keep),
       favorites:model.favorites.filter(keep),shares:model.shares.filter(keep),maps:model.maps.filter(keep),whatsapp:model.whatsapp.filter(keep),instagram:model.instagram.filter(keep),searches:model.searches.filter(keep),
-      eventRows:model.eventRows.filter(x=>x.id===id)
+      eventRows:model.eventRows.filter(x=>x.id===id),campaigns:campaignCounts(model.views.filter(keep))
     };
   }
 
@@ -181,6 +193,10 @@
     const src=Object.entries(data.sources).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const maxS=Math.max(1,...src.map(x=>x[1]));
     $('beonAnalyticsSources').innerHTML=src.length?src.map(([k,v])=>`<div class="analytics-barrow"><span>${esc(k)}</span><div class="analytics-bar"><i style="width:${(v/maxS)*100}%"></i></div><strong>${fmt(v)}</strong></div>`).join(''):'<div class="analytics-note">Sem origem identificável.</div>';
+
+    const campaignRows=Object.entries(data.campaigns||{}).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxCampaign=Math.max(1,...campaignRows.map(x=>x[1]));
+    $('beonAnalyticsCampaigns').innerHTML=campaignRows.length?campaignRows.map(([k,v])=>`<div class="analytics-barrow"><span>${esc(k)}</span><div class="analytics-bar"><i style="width:${(v/maxCampaign)*100}%"></i></div><strong>${fmt(v)}</strong></div>`).join(''):'<div class="analytics-note">Nenhuma campanha UTM identificada neste período.</div>';
 
     const interactions=[['Mapa',data.maps.length],['WhatsApp',data.whatsapp.length],['Instagram',data.instagram.length],['Compartilhar',data.shares.length],['Pesquisa',data.searches.length]];
     $('beonAnalyticsInteractions').innerHTML=interactions.map(([l,v])=>`<div><span>${l}</span><strong>${v?fmt(v):'—'}</strong></div>`).join('');
@@ -253,12 +269,21 @@
       data.views.forEach(x=>{const k=localKey(new Date(x.created_at));diario[k]=(diario[k]||0)+1});
       const diarios=Object.entries(diario).sort().map(([Data,Visualizacoes])=>({Data,Visualizacoes}));
       const src=Object.entries(base.sources).sort((a,b)=>b[1]-a[1]).map(([Origem,Visualizacoes])=>({Origem,Visualizacoes}));
+      const campaignRows={};
+      data.views.forEach(x=>{
+        if(!x.campaign)return;
+        const key=[x.campaign,x.source||'origem não informada',x.medium||'meio não informado',x.content||'peça não informada'].join(' · ');
+        campaignRows[key]=campaignRows[key]||{Campanha:x.campaign,Origem:x.source||'',Meio:x.medium||'',Conteudo:x.content||'',Visualizacoes:0};
+        campaignRows[key].Visualizacoes++;
+      });
+      const campaigns=Object.values(campaignRows);
       const interacoes=[['Mapa',data.maps.length],['WhatsApp',data.whatsapp.length],['Instagram',data.instagram.length],['Compartilhar',data.shares.length],['Pesquisa',data.searches.length]].map(([Interacao,Quantidade])=>({Interacao,Quantidade}));
       const wb=XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(Object.values(ev)),'Eventos');
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(diarios),'Diario');
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(src),'Origens');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(campaigns),'Campanhas');
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(interacoes),'Interacoes');
       XLSX.writeFile(wb,`BeOn-Analytics-${new Date().toISOString().slice(0,10)}.xlsx`);
     }catch(e){alert('Não foi possível gerar o relatório: '+(e?.message||'erro'))}
@@ -279,6 +304,7 @@
       <div id="beonAnalyticsKpis" class="analytics-kpis"></div>
       <div class="analytics-cols"><section class="analytics-card"><h3>Visualizações por dia</h3><div id="beonAnalyticsTrend" class="analytics-trend"></div></section><section class="analytics-card"><h3>Funil</h3><div id="beonAnalyticsFunnel" class="analytics-funnel"></div></section></div>
       <div class="analytics-cols"><section class="analytics-card"><h3>Eventos com maior interesse</h3><div id="beonAnalyticsEvents" class="analytics-bars"></div></section><section class="analytics-card"><h3>Origem das visualizações</h3><div id="beonAnalyticsSources" class="analytics-bars"></div></section></div>
+      <section class="analytics-card"><h3>Campanhas rastreadas (UTM)</h3><div id="beonAnalyticsCampaigns" class="analytics-bars"></div></section>
       <div class="analytics-cols"><section class="analytics-card"><h3>Eventos em alta</h3><div id="beonAnalyticsRising" class="analytics-list"></div></section><section class="analytics-card"><h3>Interações</h3><div id="beonAnalyticsInteractions" class="analytics-list"></div></section></div>
       <section class="analytics-card"><h3>Desempenho por evento</h3><div id="beonAnalyticsEventTable"></div></section>
       <div class="analytics-note">O dashboard unifica dados legados e Analytics V2, evitando duplicidade quando o mesmo acesso foi registrado pelas duas camadas. Visitantes e sessões só aparecem quando há identificação V2 válida.</div>
