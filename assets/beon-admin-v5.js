@@ -263,7 +263,7 @@
       <div class="kpi"><b>${c('event_view')}</b><div class="muted">Eventos vistos</div></div>
       <div class="kpi"><b>${c('ticket_click')}</b><div class="muted">Cliques em ingresso</div></div>
       <div class="kpi"><b>${c('favorite_toggle')}</b><div class="muted">Favoritos</div></div>
-      <div class="kpi"><b>${c('whatsapp_click')}</b><div class="muted">Cliques no WhatsApp</div></div>
+      <div class="kpi"><b>${(c('whatsapp_click')+c('analytics_whatsapp_click'))}</b><div class="muted">Cliques no WhatsApp</div></div>
     </div>`;
   }
 
