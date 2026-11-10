@@ -106,7 +106,7 @@
       q('promoUtmCampaign').value='beon-'+slugify(currentEvent.slug||currentEvent.name);
       q('promoUtmContent').value='';
       q('promoUtmResult').textContent='Escolha os parâmetros e gere um link para esta campanha.';
-      q('promoUtmCopy').disabled=true;
+      q('promoCopyUtm').disabled=true;
       q('promoUtmStatus').textContent='';
       lastLink='';activeTaskForUtm=null;
       const taskHost=q('promoCalendarTasks');
@@ -184,16 +184,17 @@
 
   const calendarTab=document.querySelector('.tabs button[data-tab="calendar"]');
   if(calendarTab){
+    let lastActive=calendarTab.classList.contains('active');
     calendarTab.addEventListener('click',event=>{
       event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
       document.querySelectorAll('.tabs button').forEach(button=>button.classList.toggle('active',button===calendarTab));
+      lastActive=true;
       try{
         const state=JSON.parse(localStorage.getItem('beon-admin-ui-v2')||'{}');
         localStorage.setItem('beon-admin-ui-v2',JSON.stringify({...state,tab:'calendar',eventEditor:{open:false}}));
       }catch{}
       showCalendar();
     },true);
-    let lastActive=false;
     const observer=new MutationObserver(()=>{
       const active=calendarTab.classList.contains('active');
       if(active&&!lastActive)showCalendar();
